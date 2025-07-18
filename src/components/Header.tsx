@@ -1,0 +1,46 @@
+import { Button } from "@/components/ui/button";
+import { Menu, User } from "lucide-react";
+
+interface HeaderProps {
+  currentUser?: 'worker' | 'employer' | null;
+  onLogin: () => void;
+  onMenuClick?: () => void;
+}
+
+export function Header({ currentUser, onLogin, onMenuClick }: HeaderProps) {
+  return (
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {onMenuClick && (
+            <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden">
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
+          <h1 className="text-xl font-bold text-primary">KaaryaSetu</h1>
+        </div>
+
+        <nav className="hidden md:flex items-center gap-6">
+          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            How it Works
+          </a>
+          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            Support
+          </a>
+        </nav>
+
+        <div className="flex items-center gap-2">
+          {currentUser ? (
+            <Button variant="ghost" size="icon">
+              <User className="w-5 h-5" />
+            </Button>
+          ) : (
+            <Button onClick={onLogin} size="sm">
+              Login
+            </Button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
