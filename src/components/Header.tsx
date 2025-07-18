@@ -5,9 +5,11 @@ interface HeaderProps {
   currentUser?: 'worker' | 'employer' | null;
   onLogin: () => void;
   onMenuClick?: () => void;
+  onHowItWorks?: () => void;
+  onSupport?: () => void;
 }
 
-export function Header({ currentUser, onLogin, onMenuClick }: HeaderProps) {
+export function Header({ currentUser, onLogin, onMenuClick, onHowItWorks, onSupport }: HeaderProps) {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -21,12 +23,18 @@ export function Header({ currentUser, onLogin, onMenuClick }: HeaderProps) {
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+          <button 
+            onClick={onHowItWorks}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             How it Works
-          </a>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+          </button>
+          <button 
+            onClick={onSupport}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             Support
-          </a>
+          </button>
         </nav>
 
         <div className="flex items-center gap-2">

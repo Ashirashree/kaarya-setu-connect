@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +14,22 @@ import {
   ArrowRight,
   Smartphone,
   Shield,
-  Zap
+  Zap,
+  Search,
+  Phone,
+  CheckCircle,
+  Clock,
+  MessageCircle
 } from "lucide-react";
 import heroImage from "@/assets/hero-workers.jpg";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'worker' | 'employer'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'worker' | 'employer' | 'how-it-works' | 'support'>('home');
   const [currentUser, setCurrentUser] = useState<'worker' | 'employer' | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number, address: string} | null>(null);
   const { toast } = useToast();
 
   // Sample jobs data
@@ -96,6 +102,54 @@ const Index = () => {
     setCurrentUser(null);
   };
 
+  // Get user location using Google Maps API
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            // Using Google Maps Geocoding API (you'll need to add your API key)
+            const response = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=YOUR_GOOGLE_MAPS_API_KEY`
+            );
+            const data = await response.json();
+            
+            if (data.results && data.results[0]) {
+              const address = data.results[0].formatted_address;
+              setUserLocation({
+                lat: latitude,
+                lng: longitude,
+                address: address
+              });
+            }
+          } catch (error) {
+            // Fallback - just use coordinates
+            setUserLocation({
+              lat: latitude,
+              lng: longitude,
+              address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            });
+          }
+        },
+        (error) => {
+          console.log("Location access denied:", error);
+          // For demo purposes, set a default location
+          setUserLocation({
+            lat: 17.4065,
+            lng: 78.4772,
+            address: "Hyderabad, Telangana, India"
+          });
+        }
+      );
+    }
+  }, []);
+
+  // Navigation handlers
+  const handleHowItWorks = () => setCurrentView('how-it-works');
+  const handleSupport = () => setCurrentView('support');
+
   if (currentView === 'worker') {
     return (
       <div className="min-h-screen bg-background">
@@ -129,13 +183,19 @@ const Index = () => {
   if (currentView === 'employer') {
     return (
       <div className="min-h-screen bg-background">
-        <Header currentUser={currentUser} onLogin={handleLogin} />
+        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold mb-2">Employer Dashboard</h1>
               <p className="text-muted-foreground">Post jobs and find skilled workers</p>
+              {userLocation && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <MapPin className="w-4 h-4" />
+                  {userLocation.address}
+                </p>
+              )}
             </div>
             <Button variant="outline" onClick={handleBackToHome}>
               Back to Home
@@ -178,9 +238,308 @@ const Index = () => {
     );
   }
 
+  // How It Works Section
+  if (currentView === 'how-it-works') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
+        
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold">How KaaryaSetu Works</h1>
+            <Button variant="outline" onClick={handleBackToHome}>
+              Back to Home
+            </Button>
+          </div>
+
+          <div className="grid gap-12">
+            {/* For Workers */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-primary">For Workers</h2>
+              <div className="grid md:grid-cols-4 gap-6">
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Smartphone className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">1. Register</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sign up with your mobile number and create your skill profile
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">2. Find Jobs</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Browse available jobs in your area based on your skills
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">3. Apply</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Apply to jobs with one click and get instant notifications
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Phone className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">4. Get Contacted</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Employers will contact you directly to discuss work details
+                  </p>
+                </Card>
+              </div>
+            </div>
+
+            {/* For Employers */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-accent">For Employers</h2>
+              <div className="grid md:grid-cols-4 gap-6">
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BriefcaseIcon className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold mb-2">1. Post Job</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create a job posting with work details and requirements
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold mb-2">2. Location Match</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Workers in your area will see your job posting automatically
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold mb-2">3. Review Applications</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Review worker profiles and select the best candidate
+                  </p>
+                </Card>
+                
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold mb-2">4. Rate & Review</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Rate workers after job completion to build trust
+                  </p>
+                </Card>
+              </div>
+            </div>
+
+            {/* Key Features */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Key Features</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <MapPin className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold mb-2">Location-Based Matching</h3>
+                      <p className="text-muted-foreground">
+                        Our system uses Google location services to match workers and employers within a 5-10 km radius, 
+                        ensuring convenient commute and local connections.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <MessageCircle className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold mb-2">Instant Notifications</h3>
+                      <p className="text-muted-foreground">
+                        Get WhatsApp and SMS alerts for new job postings, applications, and updates. 
+                        Never miss an opportunity in your area.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <Shield className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold mb-2">Safe & Verified</h3>
+                      <p className="text-muted-foreground">
+                        All users are verified through mobile OTP. Build trust through our rating and review system 
+                        for safe transactions.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <Clock className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold mb-2">Quick & Easy</h3>
+                      <p className="text-muted-foreground">
+                        Simple interface designed for daily wage workers. Apply to jobs or post work 
+                        requirements in just a few taps.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Support Section
+  if (currentView === 'support') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
+        
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold">Support & Help</h1>
+            <Button variant="outline" onClick={handleBackToHome}>
+              Back to Home
+            </Button>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Quick Help */}
+            <div className="lg:col-span-2">
+              <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+              
+              <div className="space-y-4">
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-2">How do I find jobs near me?</h3>
+                  <p className="text-muted-foreground">
+                    After registering, allow location access. The app will automatically show jobs within 5-10 km of your location. 
+                    You can also search by area or pin code.
+                  </p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-2">Is KaaryaSetu free to use?</h3>
+                  <p className="text-muted-foreground">
+                    Yes! KaaryaSetu is completely free for both workers and employers. We believe in empowering 
+                    local communities without any financial barriers.
+                  </p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-2">How do I get paid for completed work?</h3>
+                  <p className="text-muted-foreground">
+                    Payment is directly between you and the employer. We recommend discussing payment terms before starting work. 
+                    Always get payment confirmation in writing.
+                  </p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-2">What if I face issues with an employer/worker?</h3>
+                  <p className="text-muted-foreground">
+                    Use our rating system to report issues. For serious problems, contact our support team. 
+                    We maintain a blacklist of problematic users to keep the platform safe.
+                  </p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-2">Can I work in multiple cities?</h3>
+                  <p className="text-muted-foreground">
+                    Yes! Update your location when you move to a new city. The app will show jobs in your new area. 
+                    Your profile and ratings will remain with you.
+                  </p>
+                </Card>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Get in Touch</h2>
+              
+              <div className="space-y-4">
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Phone className="w-5 h-5" />
+                    Phone Support
+                  </h3>
+                  <p className="text-muted-foreground mb-2">
+                    Call us for immediate help
+                  </p>
+                  <p className="font-medium">+91 9876543210</p>
+                  <p className="text-sm text-muted-foreground">Mon-Sat: 9 AM - 7 PM</p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5" />
+                    WhatsApp Support
+                  </h3>
+                  <p className="text-muted-foreground mb-2">
+                    Quick help via WhatsApp
+                  </p>
+                  <p className="font-medium">+91 9876543210</p>
+                  <p className="text-sm text-muted-foreground">Available 24/7</p>
+                </Card>
+                
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4">Safety Guidelines</h3>
+                  <ul className="text-sm text-muted-foreground space-y-2">
+                    <li>• Meet in public places initially</li>
+                    <li>• Verify payment terms before starting</li>
+                    <li>• Keep work communication on platform</li>
+                    <li>• Report suspicious behavior immediately</li>
+                    <li>• Trust your instincts about safety</li>
+                  </ul>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4">Regional Language Support</h3>
+                  <p className="text-muted-foreground mb-2">
+                    Available in:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Hindi</li>
+                    <li>• Telugu</li>
+                    <li>• Tamil</li>
+                    <li>• Bengali</li>
+                    <li>• Marathi</li>
+                  </ul>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <Header currentUser={currentUser} onLogin={handleLogin} />
+      <Header 
+        currentUser={currentUser} 
+        onLogin={handleLogin} 
+        onMenuClick={() => {}}
+        onHowItWorks={handleHowItWorks}
+        onSupport={handleSupport}
+      />
       
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
