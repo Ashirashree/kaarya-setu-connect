@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { UserTypeSelector } from "@/components/UserTypeSelector";
 import { JobCard } from "@/components/JobCard";
+import { LoginModal } from "@/components/LoginModal";
 import { 
   MapPin, 
   Users, 
@@ -21,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 const Index = () => {
   const [currentView, setCurrentView] = useState<'home' | 'worker' | 'employer'>('home');
   const [currentUser, setCurrentUser] = useState<'worker' | 'employer' | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const { toast } = useToast();
 
   // Sample jobs data
@@ -67,9 +70,17 @@ const Index = () => {
   };
 
   const handleLogin = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleLoginSuccess = (userType: 'worker' | 'employer', userData: any) => {
+    setCurrentUser(userType);
+    setUserData(userData);
+    setCurrentView(userType);
+    setIsLoginModalOpen(false);
     toast({
-      title: "Login Feature",
-      description: "OTP-based login will be implemented in the next version!"
+      title: `Welcome, ${userData.name}!`,
+      description: `You are now logged in as a ${userType}`
     });
   };
 
@@ -346,6 +357,12 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 };
