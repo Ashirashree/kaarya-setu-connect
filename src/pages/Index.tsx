@@ -6,6 +6,8 @@ import { Header } from "@/components/Header";
 import { UserTypeSelector } from "@/components/UserTypeSelector";
 import { JobCard } from "@/components/JobCard";
 import { LoginModal } from "@/components/LoginModal";
+import { LocationPermissionModal } from "@/components/LocationPermissionModal";
+import { Job } from "@/types/job";
 import { 
   MapPin, 
   Users, 
@@ -19,7 +21,8 @@ import {
   Phone,
   CheckCircle,
   Clock,
-  MessageCircle
+  MessageCircle,
+  Filter
 } from "lucide-react";
 import heroImage from "@/assets/hero-workers.jpg";
 import { useToast } from "@/hooks/use-toast";
@@ -30,10 +33,11 @@ const Index = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number, address: string} | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const { toast } = useToast();
 
-  // Sample jobs data
-  const sampleJobs = [
+  // Sample jobs data with coordinates for location filtering
+  const sampleJobs: Job[] = [
     {
       id: '1',
       title: 'House Painting Job',
@@ -44,7 +48,9 @@ const Index = () => {
       time: '9:00 AM - 5:00 PM',
       pay: '₹1,500/day',
       employer: 'Rajesh Kumar',
-      urgent: true
+      urgent: true,
+      lat: 17.4326,
+      lng: 78.4071
     },
     {
       id: '2',
@@ -55,7 +61,9 @@ const Index = () => {
       date: 'Tomorrow',
       time: '7:00 AM - 9:00 AM',
       pay: '₹800/day',
-      employer: 'Tech Solutions Pvt Ltd'
+      employer: 'Tech Solutions Pvt Ltd',
+      lat: 17.4435,
+      lng: 78.3772
     },
     {
       id: '3',
@@ -66,9 +74,39 @@ const Index = () => {
       date: 'Dec 20',
       time: '10:00 AM - 3:00 PM',
       pay: '₹1,200/day',
-      employer: 'Priya Sharma'
+      employer: 'Priya Sharma',
+      lat: 17.4239,
+      lng: 78.4738
+    },
+    {
+      id: '4',
+      title: 'Garden Maintenance',
+      category: 'Gardener',
+      description: 'Weekly garden maintenance including watering, pruning, and lawn mowing.',
+      location: 'Madhapur, Hyderabad',
+      date: 'This Weekend',
+      time: '6:00 AM - 10:00 AM',
+      pay: '₹1,000/day',
+      employer: 'Green Gardens Society',
+      lat: 17.4483,
+      lng: 78.3915
+    },
+    {
+      id: '5',
+      title: 'Kitchen Helper',
+      category: 'Cook',
+      description: 'Help with cooking and kitchen preparation for small restaurant.',
+      location: 'Kondapur, Hyderabad',
+      date: 'Next Week',
+      time: '8:00 AM - 6:00 PM',
+      pay: '₹900/day',
+      employer: 'Spice Route Restaurant',
+      lat: 17.4650,
+      lng: 78.3629
     }
   ];
+
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>(sampleJobs);
 
   const handleUserTypeSelect = (type: 'worker' | 'employer') => {
     setCurrentView(type);
@@ -102,49 +140,89 @@ const Index = () => {
     setCurrentUser(null);
   };
 
-  // Get user location using Google Maps API
+  // Calculate distance between two points in kilometers
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Filter jobs based on user location
+  const filterJobsByLocation = (location: { lat: number; lng: number }) => {
+    const maxDistance = 15; // 15 km radius
+    const filtered = sampleJobs.filter(job => {
+      if (!job.lat || !job.lng) return true; // Include jobs without coordinates
+      const distance = calculateDistance(location.lat, location.lng, job.lat, job.lng);
+      return distance <= maxDistance;
+    }).map(job => ({
+      ...job,
+      distance: job.lat && job.lng 
+        ? calculateDistance(location.lat, location.lng, job.lat, job.lng)
+        : null
+    })).sort((a, b) => {
+      // Sort by distance, putting jobs without distance at the end
+      if (a.distance === null) return 1;
+      if (b.distance === null) return -1;
+      return a.distance - b.distance;
+    });
+    
+    setFilteredJobs(filtered);
+  };
+
+  // Handle location permission
+  const handleLocationGranted = (location: { lat: number; lng: number; address: string }) => {
+    setUserLocation(location);
+    setShowLocationModal(false);
+    filterJobsByLocation(location);
+    toast({
+      title: "Location Updated!",
+      description: `Now showing jobs near ${location.address}`
+    });
+  };
+
+  const handleLocationSkipped = () => {
+    setShowLocationModal(false);
+    // Set default location to Hyderabad
+    const defaultLocation = {
+      lat: 17.4065,
+      lng: 78.4772,
+      address: "Hyderabad, Telangana, India"
+    };
+    setUserLocation(defaultLocation);
+    setFilteredJobs(sampleJobs); // Show all jobs if location is skipped
+  };
+
+  // Show location modal on first visit
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          try {
-            // Using Google Maps Geocoding API (you'll need to add your API key)
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=YOUR_GOOGLE_MAPS_API_KEY`
-            );
-            const data = await response.json();
-            
-            if (data.results && data.results[0]) {
-              const address = data.results[0].formatted_address;
-              setUserLocation({
-                lat: latitude,
-                lng: longitude,
-                address: address
-              });
-            }
-          } catch (error) {
-            // Fallback - just use coordinates
-            setUserLocation({
-              lat: latitude,
-              lng: longitude,
-              address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            });
-          }
-        },
-        (error) => {
-          console.log("Location access denied:", error);
-          // For demo purposes, set a default location
-          setUserLocation({
-            lat: 17.4065,
-            lng: 78.4772,
-            address: "Hyderabad, Telangana, India"
-          });
-        }
-      );
+    const hasRequestedLocation = localStorage.getItem('locationRequested');
+    if (!hasRequestedLocation) {
+      setShowLocationModal(true);
+      localStorage.setItem('locationRequested', 'true');
+    } else {
+      // Check if we have location in localStorage
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        const location = JSON.parse(savedLocation);
+        setUserLocation(location);
+        filterJobsByLocation(location);
+      } else {
+        handleLocationSkipped();
+      }
     }
   }, []);
+
+  // Save location to localStorage when it changes
+  useEffect(() => {
+    if (userLocation) {
+      localStorage.setItem('userLocation', JSON.stringify(userLocation));
+    }
+  }, [userLocation]);
 
   // Navigation handlers
   const handleHowItWorks = () => setCurrentView('how-it-works');
@@ -159,22 +237,50 @@ const Index = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold mb-2">Available Jobs Near You</h1>
-              <p className="text-muted-foreground">Find work opportunities in your area</p>
+              <p className="text-muted-foreground">
+                {userLocation ? `Showing jobs near ${userLocation.address}` : 'Find work opportunities in your area'}
+              </p>
+              {userLocation && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Found {filteredJobs.length} jobs within 15 km
+                </p>
+              )}
             </div>
-            <Button variant="outline" onClick={handleBackToHome}>
-              Back to Home
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowLocationModal(true)}>
+                <MapPin className="w-4 h-4 mr-2" />
+                Update Location
+              </Button>
+              <Button variant="outline" onClick={handleBackToHome}>
+                Back to Home
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {sampleJobs.map((job) => (
+            {filteredJobs.map((job) => (
               <JobCard 
                 key={job.id}
                 job={job}
                 onApply={handleApplyJob}
+                distance={job.distance}
               />
             ))}
           </div>
+
+          {filteredJobs.length === 0 && (
+            <Card className="p-8 text-center">
+              <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No jobs found in your area</h3>
+              <p className="text-muted-foreground mb-4">
+                Try updating your location or check back later for new opportunities.
+              </p>
+              <Button variant="outline" onClick={() => setShowLocationModal(true)}>
+                <MapPin className="w-4 h-4 mr-2" />
+                Update Location
+              </Button>
+            </Card>
+          )}
         </div>
       </div>
     );
@@ -717,11 +823,17 @@ const Index = () => {
         </div>
       </footer>
 
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
-      />
+        <LoginModal 
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+        
+        <LocationPermissionModal 
+          isOpen={showLocationModal}
+          onLocationGranted={handleLocationGranted}
+          onSkip={handleLocationSkipped}
+        />
     </div>
   );
 };
