@@ -7,6 +7,7 @@ import { UserTypeSelector } from "@/components/UserTypeSelector";
 import { JobCard } from "@/components/JobCard";
 import { LoginModal } from "@/components/LoginModal";
 import { LocationPermissionModal } from "@/components/LocationPermissionModal";
+import { JobPostModal } from "@/components/JobPostModal";
 import { Job } from "@/types/job";
 import { 
   MapPin, 
@@ -34,6 +35,7 @@ const Index = () => {
   const [userData, setUserData] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number, address: string} | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showJobPostModal, setShowJobPostModal] = useState(false);
   const { toast } = useToast();
 
   // Sample jobs data with coordinates for location filtering
@@ -138,6 +140,21 @@ const Index = () => {
   const handleBackToHome = () => {
     setCurrentView('home');
     setCurrentUser(null);
+  };
+
+  const handleCreateJobPost = () => {
+    if (!currentUser) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setShowJobPostModal(true);
+  };
+
+  const handleJobCreated = (newJob: Job) => {
+    // Add the new job to our sample jobs array
+    // In a real app, this would be sent to the backend
+    sampleJobs.unshift(newJob);
+    setFilteredJobs([newJob, ...filteredJobs]);
   };
 
   // Calculate distance between two points in kilometers
@@ -314,7 +331,7 @@ const Index = () => {
               <p className="text-muted-foreground mb-4">
                 Create a job posting to find skilled workers in your area
               </p>
-              <Button className="w-full">Create Job Post</Button>
+              <Button className="w-full hover:scale-105 transition-transform" onClick={handleCreateJobPost}>Create Job Post</Button>
             </Card>
 
             <Card className="p-6">
@@ -833,6 +850,13 @@ const Index = () => {
           isOpen={showLocationModal}
           onLocationGranted={handleLocationGranted}
           onSkip={handleLocationSkipped}
+        />
+        
+        <JobPostModal 
+          isOpen={showJobPostModal}
+          onClose={() => setShowJobPostModal(false)}
+          onJobCreated={handleJobCreated}
+          userLocation={userLocation}
         />
     </div>
   );
