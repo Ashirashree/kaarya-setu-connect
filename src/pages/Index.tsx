@@ -8,7 +8,8 @@ import { JobCard } from "@/components/JobCard";
 import { LoginModal } from "@/components/LoginModal";
 import { LocationPermissionModal } from "@/components/LocationPermissionModal";
 import { JobPostModal } from "@/components/JobPostModal";
-import { Job } from "@/types/job";
+import { useAuth } from "@/hooks/useAuth";
+import { useJobs } from "@/hooks/useJobs";
 import { 
   MapPin, 
   Users, 
@@ -30,173 +31,75 @@ import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'home' | 'worker' | 'employer' | 'how-it-works' | 'support'>('home');
-  const [currentUser, setCurrentUser] = useState<'worker' | 'employer' | null>(null);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number, address: string} | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showJobPostModal, setShowJobPostModal] = useState(false);
+  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
   const { toast } = useToast();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
+  const { jobs, loading: jobsLoading, fetchJobs, applyToJob, filterJobsByLocation } = useJobs();
 
-  // Sample jobs data with coordinates for location filtering
-  const sampleJobs: Job[] = [
-    {
-      id: '1',
-      title: 'House Painting Job',
-      category: 'Painter',
-      description: 'Need experienced painter for 2-bedroom apartment interior painting. Must bring own brushes.',
-      location: 'Jubilee Hills, Hyderabad',
-      date: 'Today',
-      time: '9:00 AM - 5:00 PM',
-      pay: '₹1,500/day',
-      employer: 'Rajesh Kumar',
-      urgent: true,
-      lat: 17.4326,
-      lng: 78.4071
-    },
-    {
-      id: '2',
-      title: 'Office Cleaning',
-      category: 'Cleaner',
-      description: 'Daily office cleaning required for small IT company. Morning shift preferred.',
-      location: 'HITEC City, Hyderabad',
-      date: 'Tomorrow',
-      time: '7:00 AM - 9:00 AM',
-      pay: '₹800/day',
-      employer: 'Tech Solutions Pvt Ltd',
-      lat: 17.4435,
-      lng: 78.3772
-    },
-    {
-      id: '3',
-      title: 'Moving Helper Needed',
-      category: 'Helper',
-      description: 'Help with household shifting from one apartment to another. Heavy lifting required.',
-      location: 'Banjara Hills, Hyderabad',
-      date: 'Dec 20',
-      time: '10:00 AM - 3:00 PM',
-      pay: '₹1,200/day',
-      employer: 'Priya Sharma',
-      lat: 17.4239,
-      lng: 78.4738
-    },
-    {
-      id: '4',
-      title: 'Garden Maintenance',
-      category: 'Gardener',
-      description: 'Weekly garden maintenance including watering, pruning, and lawn mowing.',
-      location: 'Madhapur, Hyderabad',
-      date: 'This Weekend',
-      time: '6:00 AM - 10:00 AM',
-      pay: '₹1,000/day',
-      employer: 'Green Gardens Society',
-      lat: 17.4483,
-      lng: 78.3915
-    },
-    {
-      id: '5',
-      title: 'Kitchen Helper',
-      category: 'Cook',
-      description: 'Help with cooking and kitchen preparation for small restaurant.',
-      location: 'Kondapur, Hyderabad',
-      date: 'Next Week',
-      time: '8:00 AM - 6:00 PM',
-      pay: '₹900/day',
-      employer: 'Spice Route Restaurant',
-      lat: 17.4650,
-      lng: 78.3629
-    }
-  ];
-
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(sampleJobs);
+  // Current user type based on profile
+  const currentUser = profile?.user_type || null;
 
   const handleUserTypeSelect = (type: 'worker' | 'employer') => {
     setCurrentView(type);
-    setCurrentUser(type);
   };
 
   const handleLogin = () => {
-    setIsLoginModalOpen(true);
+    if (!user) {
+      setShowJobPostModal(true);
+    }
   };
 
   const handleLoginSuccess = (userType: 'worker' | 'employer', userData: any) => {
-    setCurrentUser(userType);
-    setUserData(userData);
     setCurrentView(userType);
-    setIsLoginModalOpen(false);
     toast({
       title: `Welcome, ${userData.name}!`,
       description: `You are now logged in as a ${userType}`
     });
   };
 
-  const handleApplyJob = (jobId: string) => {
-    toast({
-      title: "Application Sent!",
-      description: "Your application has been sent to the employer. They will contact you soon."
-    });
+  const handleApplyJob = async (jobId: string) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to apply for jobs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await applyToJob(jobId, user.id);
   };
 
   const handleBackToHome = () => {
     setCurrentView('home');
-    setCurrentUser(null);
   };
 
   const handleCreateJobPost = () => {
-    if (!currentUser) {
-      setIsLoginModalOpen(true);
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to post jobs",
+        variant: "destructive"
+      });
       return;
     }
     setShowJobPostModal(true);
   };
 
-  const handleJobCreated = (newJob: Job) => {
-    // Add the new job to our sample jobs array
-    // In a real app, this would be sent to the backend
-    sampleJobs.unshift(newJob);
-    setFilteredJobs([newJob, ...filteredJobs]);
+  const handleJobCreated = () => {
+    fetchJobs(); // Refresh jobs list
   };
 
-  // Calculate distance between two points in kilometers
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  // Filter jobs based on user location
-  const filterJobsByLocation = (location: { lat: number; lng: number }) => {
-    const maxDistance = 15; // 15 km radius
-    const filtered = sampleJobs.filter(job => {
-      if (!job.lat || !job.lng) return true; // Include jobs without coordinates
-      const distance = calculateDistance(location.lat, location.lng, job.lat, job.lng);
-      return distance <= maxDistance;
-    }).map(job => ({
-      ...job,
-      distance: job.lat && job.lng 
-        ? calculateDistance(location.lat, location.lng, job.lat, job.lng)
-        : null
-    })).sort((a, b) => {
-      // Sort by distance, putting jobs without distance at the end
-      if (a.distance === null) return 1;
-      if (b.distance === null) return -1;
-      return a.distance - b.distance;
-    });
-    
-    setFilteredJobs(filtered);
-  };
 
   // Handle location permission
   const handleLocationGranted = (location: { lat: number; lng: number; address: string }) => {
     setUserLocation(location);
     setShowLocationModal(false);
-    filterJobsByLocation(location);
+    const filtered = filterJobsByLocation(location);
+    setFilteredJobs(filtered);
     toast({
       title: "Location Updated!",
       description: `Now showing jobs near ${location.address}`
@@ -212,7 +115,7 @@ const Index = () => {
       address: "Hyderabad, Telangana, India"
     };
     setUserLocation(defaultLocation);
-    setFilteredJobs(sampleJobs); // Show all jobs if location is skipped
+    setFilteredJobs(jobs); // Show all jobs if location is skipped
   };
 
   // Show location modal on first visit
@@ -227,7 +130,8 @@ const Index = () => {
       if (savedLocation) {
         const location = JSON.parse(savedLocation);
         setUserLocation(location);
-        filterJobsByLocation(location);
+        const filtered = filterJobsByLocation(location);
+        setFilteredJobs(filtered);
       } else {
         handleLocationSkipped();
       }
@@ -248,7 +152,7 @@ const Index = () => {
   if (currentView === 'worker') {
     return (
       <div className="min-h-screen bg-background">
-        <Header currentUser={currentUser} onLogin={handleLogin} />
+        <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
@@ -306,7 +210,7 @@ const Index = () => {
   if (currentView === 'employer') {
     return (
       <div className="min-h-screen bg-background">
-        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
+        <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} onMenuClick={() => {}} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
@@ -343,19 +247,19 @@ const Index = () => {
             </Card>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Your Recent Job Posts</h3>
-            <div className="grid gap-4">
-              {sampleJobs.slice(0, 2).map((job) => (
-                <JobCard 
-                  key={job.id}
-                  job={job}
-                  onApply={handleApplyJob}
-                  showApplyButton={false}
-                />
-              ))}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Your Recent Job Posts</h3>
+              <div className="grid gap-4">
+                 {jobs.slice(0, 2).map((job) => (
+                   <JobCard 
+                     key={job.id}
+                     job={{...job, employer: 'You'}}
+                     onApply={handleApplyJob}
+                     showApplyButton={false}
+                   />
+                 ))}
+              </div>
             </div>
-          </div>
         </div>
       </div>
     );
@@ -365,7 +269,7 @@ const Index = () => {
   if (currentView === 'how-it-works') {
     return (
       <div className="min-h-screen bg-background">
-        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
+        <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} onMenuClick={() => {}} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
@@ -535,7 +439,7 @@ const Index = () => {
   if (currentView === 'support') {
     return (
       <div className="min-h-screen bg-background">
-        <Header currentUser={currentUser} onLogin={handleLogin} onMenuClick={() => {}} />
+        <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} onMenuClick={() => {}} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
@@ -656,13 +560,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header 
-        currentUser={currentUser} 
-        onLogin={handleLogin} 
-        onMenuClick={() => {}}
-        onHowItWorks={handleHowItWorks}
-        onSupport={handleSupport}
-      />
+        <Header 
+          currentUser={currentUser} 
+          onLogin={handleLogin}
+          onLogout={signOut}
+          user={profile}
+          onMenuClick={() => {}}
+          onHowItWorks={handleHowItWorks}
+          onSupport={handleSupport}
+        />
       
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
@@ -782,10 +688,10 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {sampleJobs.map((job) => (
+            {jobs.slice(0, 6).map((job) => (
               <JobCard 
                 key={job.id}
-                job={job}
+                job={{...job, employer: 'Employer'}}
                 onApply={handleApplyJob}
               />
             ))}
@@ -841,8 +747,8 @@ const Index = () => {
       </footer>
 
         <LoginModal 
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
+          isOpen={showJobPostModal && !user} 
+          onClose={() => setShowJobPostModal(false)}
           onLoginSuccess={handleLoginSuccess}
         />
         
@@ -852,8 +758,8 @@ const Index = () => {
           onSkip={handleLocationSkipped}
         />
         
-        <JobPostModal 
-          isOpen={showJobPostModal}
+        <JobPostModal
+          isOpen={showJobPostModal && !!user}
           onClose={() => setShowJobPostModal(false)}
           onJobCreated={handleJobCreated}
           userLocation={userLocation}

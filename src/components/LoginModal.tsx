@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Smartphone, User, Briefcase } from "lucide-react";
 
 interface LoginModalProps {
@@ -21,9 +22,10 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { signInWithPhone, verifyOtp, createProfile, profile: userProfile } = useAuth();
 
   // Profile form state
-  const [profile, setProfile] = useState({
+  const [profileForm, setProfileForm] = useState({
     name: '',
     age: '',
     location: '',
@@ -44,15 +46,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     }
 
     setIsLoading(true);
-    // Simulate OTP sending
-    setTimeout(() => {
-      setIsLoading(false);
+    const result = await signInWithPhone(phoneNumber);
+    setIsLoading(false);
+    
+    if (result.success) {
       setStep('otp');
-      toast({
-        title: "OTP Sent!",
-        description: `Verification code sent to +91 ${phoneNumber}`
-      });
-    }, 1500);
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -66,37 +65,34 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     }
 
     setIsLoading(true);
-    // Simulate OTP verification
-    setTimeout(() => {
-      setIsLoading(false);
-      // Check if user exists (simulate)
-      const isNewUser = true; // In real app, check from backend
-      
-      if (isNewUser) {
-        setStep('profile');
-      } else {
-        // Existing user - login directly
-        const userData = {
-          phoneNumber,
-          name: 'John Doe',
-          userType
-        };
-        onLoginSuccess(userType, userData);
-        onClose();
-        toast({
-          title: "Welcome back!",
-          description: "You have been logged in successfully"
-        });
-      }
-    }, 1500);
+    const result = await verifyOtp(phoneNumber, otp);
+    setIsLoading(false);
+    
+    if (result.success) {
+      // Check if profile exists
+      setTimeout(() => {
+        if (userProfile) {
+          // Existing user - login directly
+          onLoginSuccess(userProfile.user_type, {
+            phoneNumber,
+            name: userProfile.full_name || 'User',
+            userType: userProfile.user_type
+          });
+          onClose();
+        } else {
+          // New user - complete profile
+          setStep('profile');
+        }
+      }, 500);
+    }
   };
 
   const handleCompleteProfile = async () => {
     const requiredFields = userType === 'worker' 
-      ? ['name', 'age', 'location', 'skills']
-      : ['name', 'businessName', 'location'];
+      ? ['name', 'location']
+      : ['name', 'location'];
 
-    const missingFields = requiredFields.filter(field => !profile[field as keyof typeof profile]);
+    const missingFields = requiredFields.filter(field => !profileForm[field as keyof typeof profileForm]);
     
     if (missingFields.length > 0) {
       toast({
@@ -108,28 +104,30 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     }
 
     setIsLoading(true);
-    // Simulate profile creation
-    setTimeout(() => {
-      setIsLoading(false);
+    const result = await createProfile({
+      full_name: profileForm.name,
+      phone: phoneNumber,
+      user_type: userType,
+      location: profileForm.location
+    });
+    setIsLoading(false);
+    
+    if (result.success) {
       const userData = {
         phoneNumber,
-        ...profile,
+        name: profileForm.name,
         userType
       };
       onLoginSuccess(userType, userData);
       onClose();
-      toast({
-        title: "Profile Created!",
-        description: "Welcome to KaaryaSetu. Start exploring opportunities!"
-      });
-    }, 1500);
+    }
   };
 
   const resetModal = () => {
     setStep('phone');
     setPhoneNumber('');
     setOtp('');
-    setProfile({
+    setProfileForm({
       name: '',
       age: '',
       location: '',
@@ -262,8 +260,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 <Input
                   id="name"
                   placeholder="Enter your full name"
-                  value={profile.name}
-                  onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -276,8 +274,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                         id="age"
                         type="number"
                         placeholder="Age"
-                        value={profile.age}
-                        onChange={(e) => setProfile(prev => ({ ...prev, age: e.target.value }))}
+                        value={profileForm.age}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, age: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-2">
@@ -286,8 +284,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                         id="experience"
                         type="number"
                         placeholder="Years"
-                        value={profile.experience}
-                        onChange={(e) => setProfile(prev => ({ ...prev, experience: e.target.value }))}
+                        value={profileForm.experience}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, experience: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -297,8 +295,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                     <Input
                       id="skills"
                       placeholder="e.g., Painting, Cleaning, Construction"
-                      value={profile.skills}
-                      onChange={(e) => setProfile(prev => ({ ...prev, skills: e.target.value }))}
+                      value={profileForm.skills}
+                      onChange={(e) => setProfileForm(prev => ({ ...prev, skills: e.target.value }))}
                     />
                   </div>
                 </>
@@ -311,8 +309,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                     <Input
                       id="businessName"
                       placeholder="Enter business name"
-                      value={profile.businessName}
-                      onChange={(e) => setProfile(prev => ({ ...prev, businessName: e.target.value }))}
+                      value={profileForm.businessName}
+                      onChange={(e) => setProfileForm(prev => ({ ...prev, businessName: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -320,8 +318,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                     <Input
                       id="businessType"
                       placeholder="e.g., Individual, Small Business, Company"
-                      value={profile.businessType}
-                      onChange={(e) => setProfile(prev => ({ ...prev, businessType: e.target.value }))}
+                      value={profileForm.businessType}
+                      onChange={(e) => setProfileForm(prev => ({ ...prev, businessType: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -332,8 +330,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 <Input
                   id="location"
                   placeholder="Enter your city/area"
-                  value={profile.location}
-                  onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
+                  value={profileForm.location}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, location: e.target.value }))}
                 />
               </div>
 

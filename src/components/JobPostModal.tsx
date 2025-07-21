@@ -10,12 +10,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { CalendarIcon, MapPin, Clock, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Job } from "@/types/job";
+import { useJobs } from "@/hooks/useJobs";
+import { useAuth } from "@/hooks/useAuth";
 
 interface JobPostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJobCreated: (job: Job) => void;
+  onJobCreated?: () => void;
   userLocation?: { lat: number; lng: number; address: string } | null;
 }
 
@@ -38,13 +39,15 @@ export function JobPostModal({ isOpen, onClose, onJobCreated, userLocation }: Jo
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { createJob } = useJobs();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title || !formData.category || !formData.description || 
         !formData.location || !formData.date || !formData.startTime || 
-        !formData.endTime || !formData.pay) {
+        !formData.endTime || !formData.pay || !user) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -55,27 +58,24 @@ export function JobPostModal({ isOpen, onClose, onJobCreated, userLocation }: Jo
 
     setIsSubmitting(true);
 
-    // Create new job object
-    const newJob: Job = {
-      id: Date.now().toString(),
+    const result = await createJob({
       title: formData.title,
       category: formData.category,
       description: formData.description,
       location: formData.location,
-      date: formData.date ? format(formData.date, 'MMM dd') : 'Today',
+      date: formData.date,
       time: `${formData.startTime} - ${formData.endTime}`,
       pay: formData.pay.startsWith('₹') ? formData.pay : `₹${formData.pay}`,
-      employer: 'You',
       urgent: formData.urgent,
       lat: userLocation?.lat,
       lng: userLocation?.lng
-    };
+    }, user.id);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onJobCreated(newJob);
+    setIsSubmitting(false);
+
+    if (result.success) {
       onClose();
+      onJobCreated?.();
       
       // Reset form
       setFormData({
@@ -89,12 +89,7 @@ export function JobPostModal({ isOpen, onClose, onJobCreated, userLocation }: Jo
         pay: '',
         urgent: false
       });
-
-      toast({
-        title: "Job Posted Successfully!",
-        description: "Your job posting is now live and workers in your area will be notified."
-      });
-    }, 1500);
+    }
   };
 
   return (

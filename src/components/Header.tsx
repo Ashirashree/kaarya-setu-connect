@@ -4,12 +4,14 @@ import { Menu, User } from "lucide-react";
 interface HeaderProps {
   currentUser?: 'worker' | 'employer' | null;
   onLogin: () => void;
+  onLogout?: () => void;
+  user?: any;
   onMenuClick?: () => void;
   onHowItWorks?: () => void;
   onSupport?: () => void;
 }
 
-export function Header({ currentUser, onLogin, onMenuClick, onHowItWorks, onSupport }: HeaderProps) {
+export function Header({ currentUser, onLogin, onLogout, user, onMenuClick, onHowItWorks, onSupport }: HeaderProps) {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
