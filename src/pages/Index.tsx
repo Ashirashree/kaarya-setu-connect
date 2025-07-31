@@ -10,6 +10,7 @@ import { LocationPermissionModal } from "@/components/LocationPermissionModal";
 import { JobPostModal } from "@/components/JobPostModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useJobs } from "@/hooks/useJobs";
+import { useStats } from "@/hooks/useStats";
 import { 
   MapPin, 
   Users, 
@@ -38,6 +39,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { jobs, loading: jobsLoading, fetchJobs, applyToJob, filterJobsByLocation } = useJobs();
+  const { activeWorkers, jobsPosted, successRate, loading: statsLoading } = useStats();
 
   // Current user type based on profile
   const currentUser = profile?.user_type || null;
@@ -597,15 +599,21 @@ const Index = () => {
 
               <div className="flex items-center gap-8 pt-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">1000+</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {statsLoading ? '...' : activeWorkers}
+                  </div>
                   <div className="text-sm text-muted-foreground">Active Workers</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">500+</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {statsLoading ? '...' : jobsPosted}
+                  </div>
                   <div className="text-sm text-muted-foreground">Jobs Posted</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">95%</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {statsLoading ? '...' : `${successRate}%`}
+                  </div>
                   <div className="text-sm text-muted-foreground">Success Rate</div>
                 </div>
               </div>
