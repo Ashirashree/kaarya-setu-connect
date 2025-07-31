@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { CountryCodeSelector } from "@/components/CountryCodeSelector";
 import { Smartphone, User, Briefcase } from "lucide-react";
 
 interface LoginModalProps {
@@ -18,6 +19,7 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [step, setStep] = useState<'phone' | 'otp' | 'profile'>('phone');
   const [userType, setUserType] = useState<'worker' | 'employer'>('worker');
+  const [countryCode, setCountryCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,17 +38,18 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
   });
 
   const handleSendOTP = async () => {
-    if (!phoneNumber || phoneNumber.length !== 10) {
+    if (!phoneNumber || phoneNumber.length < 7) {
       toast({
         title: "Invalid Phone Number",
-        description: "Please enter a valid 10-digit phone number",
+        description: "Please enter a valid phone number",
         variant: "destructive"
       });
       return;
     }
 
+    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
     setIsLoading(true);
-    const result = await signInWithPhone(phoneNumber);
+    const result = await signInWithPhone(fullPhoneNumber);
     setIsLoading(false);
     
     if (result.success) {
@@ -64,8 +67,9 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
       return;
     }
 
+    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
     setIsLoading(true);
-    const result = await verifyOtp(phoneNumber, otp);
+    const result = await verifyOtp(fullPhoneNumber, otp);
     setIsLoading(false);
     
     if (result.success) {
@@ -74,7 +78,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
         if (userProfile) {
           // Existing user - login directly
           onLoginSuccess(userProfile.user_type, {
-            phoneNumber,
+            phoneNumber: `${countryCode}${phoneNumber}`,
             name: userProfile.full_name || 'User',
             userType: userProfile.user_type
           });
@@ -106,7 +110,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     setIsLoading(true);
     const result = await createProfile({
       full_name: profileForm.name,
-      phone: phoneNumber,
+      phone: `${countryCode}${phoneNumber}`,
       user_type: userType,
       location: profileForm.location
     });
@@ -114,7 +118,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
     
     if (result.success) {
       const userData = {
-        phoneNumber,
+        phoneNumber: `${countryCode}${phoneNumber}`,
         name: profileForm.name,
         userType
       };
@@ -125,6 +129,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
 
   const resetModal = () => {
     setStep('phone');
+    setCountryCode('+91');
     setPhoneNumber('');
     setOtp('');
     setProfileForm({
@@ -173,15 +178,16 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
               <div className="space-y-2">
                 <Label htmlFor="phone">Mobile Number</Label>
                 <div className="flex">
-                  <div className="flex items-center px-3 border border-r-0 border-input bg-muted rounded-l-md">
-                    <span className="text-sm">+91</span>
-                  </div>
+                  <CountryCodeSelector
+                    value={countryCode}
+                    onChange={setCountryCode}
+                  />
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="Enter 10-digit mobile number"
+                    placeholder="Enter phone number"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                     className="rounded-l-none"
                   />
                 </div>
@@ -190,7 +196,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
               <Button 
                 onClick={handleSendOTP} 
                 className="w-full" 
-                disabled={isLoading || phoneNumber.length !== 10}
+                disabled={isLoading || phoneNumber.length < 7}
               >
                 {isLoading ? (
                   <>
@@ -210,7 +216,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
             <div className="text-center">
               <p className="text-muted-foreground">
                 Enter the 6-digit code sent to<br />
-                <span className="font-medium">+91 {phoneNumber}</span>
+                <span className="font-medium">{countryCode} {phoneNumber}</span>
               </p>
             </div>
 
