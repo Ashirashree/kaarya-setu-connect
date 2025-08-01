@@ -93,8 +93,8 @@ export function useAuth() {
       if (error) throw error;
 
       if (data.user) {
-        // Create profile
-        const profileResult = await createProfile(userData);
+        // Create profile using the user from signup response
+        const profileResult = await createProfileForUser(data.user.id, userData);
         if (profileResult.success) {
           toast({
             title: "Registration Successful!",
@@ -153,6 +153,41 @@ export function useAuth() {
         .from('profiles')
         .insert({
           user_id: user.id,
+          ...profileData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data as Profile);
+      toast({
+        title: "Profile Created!",
+        description: "Welcome to KaaryaSetu. Start exploring opportunities!"
+      });
+
+      return { success: true, data };
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create profile",
+        variant: "destructive"
+      });
+      return { success: false, error: error.message };
+    }
+  };
+
+  const createProfileForUser = async (userId: string, profileData: {
+    full_name: string;
+    phone: string;
+    user_type: 'worker' | 'employer';
+    location: string;
+  }) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: userId,
           ...profileData
         })
         .select()
