@@ -9,9 +9,10 @@ interface JobCardProps {
   onApply: (jobId: string) => void;
   showApplyButton?: boolean;
   distance?: number | null;
+  currentUser?: 'worker' | 'employer';
 }
 
-export function JobCard({ job, onApply, showApplyButton = true, distance }: JobCardProps) {
+export function JobCard({ job, onApply, showApplyButton = true, distance, currentUser }: JobCardProps) {
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
       <div className="space-y-4">

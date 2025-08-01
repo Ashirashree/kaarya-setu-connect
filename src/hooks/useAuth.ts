@@ -75,48 +75,65 @@ export function useAuth() {
     }
   };
 
-  const signInWithPhone = async (phone: string) => {
+  const signUp = async (email: string, password: string, userData: {
+    full_name: string;
+    phone: string;
+    user_type: 'worker' | 'employer';
+    location: string;
+  }) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: `+91${phone}`,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
-          channel: 'sms'
+          data: userData
         }
       });
 
       if (error) throw error;
 
-      toast({
-        title: "OTP Sent!",
-        description: `Verification code sent to +91 ${phone}`
-      });
+      if (data.user) {
+        // Create profile
+        const profileResult = await createProfile(userData);
+        if (profileResult.success) {
+          toast({
+            title: "Registration Successful!",
+            description: "Your account has been created successfully."
+          });
+          return { success: true, data };
+        }
+      }
 
-      return { success: true };
+      return { success: true, data };
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send OTP",
+        title: "Registration Failed",
+        description: error.message || "Failed to create account",
         variant: "destructive"
       });
       return { success: false, error: error.message };
     }
   };
 
-  const verifyOtp = async (phone: string, otp: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: `+91${phone}`,
-        token: otp,
-        type: 'sms'
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
       if (error) throw error;
 
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back to KaaryaSetu"
+      });
+
       return { success: true, data };
     } catch (error: any) {
       toast({
-        title: "Invalid OTP",
-        description: error.message || "Please check the verification code",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
         variant: "destructive"
       });
       return { success: false, error: error.message };
@@ -190,8 +207,8 @@ export function useAuth() {
     session,
     profile,
     loading,
-    signInWithPhone,
-    verifyOtp,
+    signUp,
+    signIn,
     createProfile,
     signOut,
     fetchProfile

@@ -5,9 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { UserTypeSelector } from "@/components/UserTypeSelector";
 import { JobCard } from "@/components/JobCard";
-import { LoginModal } from "@/components/LoginModal";
+
 import { LocationPermissionModal } from "@/components/LocationPermissionModal";
 import { JobPostModal } from "@/components/JobPostModal";
+import { AuthModal } from "@/components/AuthModal";
+import { WorkerDashboard } from "@/components/WorkerDashboard";
+import { EmployerDashboard } from "@/components/EmployerDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useJobs } from "@/hooks/useJobs";
 import { useStats } from "@/hooks/useStats";
@@ -55,12 +58,21 @@ const Index = () => {
   };
 
   const handleLoginSuccess = (userType: 'worker' | 'employer', userData: any) => {
-    setCurrentView(userType);
+    // Dashboard navigation is handled automatically by authentication state
     toast({
       title: `Welcome, ${userData.name}!`,
       description: `You are now logged in as a ${userType}`
     });
   };
+
+  // Show appropriate dashboard if user is authenticated
+  if (user && profile) {
+    if (profile.user_type === 'worker') {
+      return <WorkerDashboard />;
+    } else if (profile.user_type === 'employer') {
+      return <EmployerDashboard />;
+    }
+  }
 
   const handleApplyJob = async (jobId: string) => {
     if (!user) {
@@ -754,7 +766,7 @@ const Index = () => {
         </div>
       </footer>
 
-        <LoginModal 
+        <AuthModal 
           isOpen={showJobPostModal && !user} 
           onClose={() => setShowJobPostModal(false)}
           onLoginSuccess={handleLoginSuccess}
