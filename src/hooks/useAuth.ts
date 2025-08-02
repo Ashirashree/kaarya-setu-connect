@@ -95,7 +95,10 @@ export function useAuth() {
 
       if (data.user) {
         // Create profile using the user from signup response
-        const profileResult = await createProfileForUser(data.user.id, userData);
+        const profileResult = await createProfileForUser(data.user.id, {
+          ...userData,
+          email
+        });
         if (profileResult.success) {
           toast({
             title: "Registration Successful!",
@@ -118,30 +121,20 @@ export function useAuth() {
 
   const signIn = async (phoneNumber: string, password: string) => {
     try {
-      // Find user by phone number to get their email
+      // Find user email by phone number
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('email')
         .eq('phone', phoneNumber)
         .maybeSingle();
         
       if (profileError) throw profileError;
-      if (!profile) {
+      if (!profile?.email) {
         throw new Error('Phone number not found. Please check your phone number or register first.');
       }
       
-      // Get user's email from auth.users using RPC or alternative approach
-      // Since we can't query auth.users directly, we'll need to store email in profiles
-      // For now, let's get all profiles and find the matching user_id to get email
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users?.find(u => u.id === profile.user_id);
-      
-      if (!user?.email) {
-        throw new Error('User email not found. Please contact support.');
-      }
-      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: user.email,
+        email: profile.email,
         password
       });
 
@@ -205,6 +198,7 @@ export function useAuth() {
     phone: string;
     user_type: 'worker' | 'employer';
     location: string;
+    email: string;
   }) => {
     try {
       const { data, error } = await supabase
