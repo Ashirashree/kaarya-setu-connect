@@ -65,14 +65,6 @@ const Index = () => {
     });
   };
 
-  // Show appropriate dashboard if user is authenticated
-  if (user && profile) {
-    if (profile.user_type === 'worker') {
-      return <WorkerDashboard />;
-    } else if (profile.user_type === 'employer') {
-      return <EmployerDashboard />;
-    }
-  }
 
   const handleApplyJob = async (jobId: string) => {
     if (!user) {
@@ -613,6 +605,63 @@ const Index = () => {
         />
       </div>
     );
+  }
+
+  // Show appropriate dashboard if user is authenticated
+  if (user && profile) {
+    if (profile.user_type === 'worker') {
+      return (
+        <div className="min-h-screen bg-background">
+          <WorkerDashboard />
+          
+          {/* Modals */}
+          <AuthModal 
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onLoginSuccess={handleLoginSuccess}
+          />
+          
+          <LocationPermissionModal 
+            isOpen={showLocationModal}
+            onLocationGranted={handleLocationGranted}
+            onSkip={handleLocationSkipped}
+          />
+          
+          <JobPostModal
+            isOpen={showJobPostModal && !!user}
+            onClose={() => setShowJobPostModal(false)}
+            onJobCreated={handleJobCreated}
+            userLocation={userLocation}
+          />
+        </div>
+      );
+    } else if (profile.user_type === 'employer') {
+      return (
+        <div className="min-h-screen bg-background">
+          <EmployerDashboard />
+          
+          {/* Modals */}
+          <AuthModal 
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onLoginSuccess={handleLoginSuccess}
+          />
+          
+          <LocationPermissionModal 
+            isOpen={showLocationModal}
+            onLocationGranted={handleLocationGranted}
+            onSkip={handleLocationSkipped}
+          />
+          
+          <JobPostModal
+            isOpen={showJobPostModal && !!user}
+            onClose={() => setShowJobPostModal(false)}
+            onJobCreated={handleJobCreated}
+            userLocation={userLocation}
+          />
+        </div>
+      );
+    }
   }
 
   return (
