@@ -116,32 +116,34 @@ export function useAuth() {
     }
   };
 
-  const signIn = async (emailOrPhone: string, password: string) => {
+  const signIn = async (phoneNumber: string, password: string) => {
     try {
-      // Check if input is email or phone
-      const isEmail = emailOrPhone.includes('@');
-      let loginData;
-      
-      if (isEmail) {
-        loginData = { email: emailOrPhone, password };
-      } else {
-        // If it's a phone number, find the user's email first
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('phone', emailOrPhone)
-          .single();
-          
-        if (!profile) {
-          throw new Error('Phone number not found');
-        }
+      // Find user by phone number to get their email
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('phone', phoneNumber)
+        .maybeSingle();
         
-        // Get email from auth.users (this won't work directly, so we'll use email for now)
-        // For phone login, we'll need a different approach
-        throw new Error('Please use your email to login');
+      if (profileError) throw profileError;
+      if (!profile) {
+        throw new Error('Phone number not found. Please check your phone number or register first.');
       }
       
-      const { data, error } = await supabase.auth.signInWithPassword(loginData);
+      // Get user's email from auth.users using RPC or alternative approach
+      // Since we can't query auth.users directly, we'll need to store email in profiles
+      // For now, let's get all profiles and find the matching user_id to get email
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const user = users?.users?.find(u => u.id === profile.user_id);
+      
+      if (!user?.email) {
+        throw new Error('User email not found. Please contact support.');
+      }
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password
+      });
 
       if (error) throw error;
 
