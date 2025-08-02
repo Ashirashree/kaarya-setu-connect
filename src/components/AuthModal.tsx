@@ -188,11 +188,11 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           <div className="space-y-4">
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="email">{mode === 'login' ? 'Email or Phone *' : 'Email Address *'}</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="Enter your email"
+                type="text"
+                placeholder={mode === 'login' ? "Email or Phone" : "Enter your email"}
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
               />

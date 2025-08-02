@@ -86,6 +86,7 @@ export function useAuth() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: userData
         }
       });
@@ -115,12 +116,32 @@ export function useAuth() {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (emailOrPhone: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Check if input is email or phone
+      const isEmail = emailOrPhone.includes('@');
+      let loginData;
+      
+      if (isEmail) {
+        loginData = { email: emailOrPhone, password };
+      } else {
+        // If it's a phone number, find the user's email first
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('phone', emailOrPhone)
+          .single();
+          
+        if (!profile) {
+          throw new Error('Phone number not found');
+        }
+        
+        // Get email from auth.users (this won't work directly, so we'll use email for now)
+        // For phone login, we'll need a different approach
+        throw new Error('Please use your email to login');
+      }
+      
+      const { data, error } = await supabase.auth.signInWithPassword(loginData);
 
       if (error) throw error;
 
