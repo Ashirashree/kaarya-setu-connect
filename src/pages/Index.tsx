@@ -39,6 +39,7 @@ const Index = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showJobPostModal, setShowJobPostModal] = useState(false);
   const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { jobs, loading: jobsLoading, fetchJobs, applyToJob, filterJobsByLocation } = useJobs();
@@ -49,16 +50,15 @@ const Index = () => {
 
   const handleUserTypeSelect = (type: 'worker' | 'employer') => {
     setCurrentView(type);
+    setShowAuthModal(true);
   };
 
   const handleLogin = () => {
-    if (!user) {
-      setShowJobPostModal(true);
-    }
+    setShowAuthModal(true);
   };
 
   const handleLoginSuccess = (userType: 'worker' | 'employer', userData: any) => {
-    // Dashboard navigation is handled automatically by authentication state
+    setShowAuthModal(false);
     toast({
       title: `Welcome, ${userData.name}!`,
       description: `You are now logged in as a ${userType}`
@@ -766,6 +766,12 @@ const Index = () => {
         </div>
       </footer>
 
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+        
         <AuthModal 
           isOpen={showJobPostModal && !user} 
           onClose={() => setShowJobPostModal(false)}
