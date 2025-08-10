@@ -41,9 +41,14 @@ export function Header({ currentUser, onLogin, onLogout, user, onMenuClick, onHo
 
         <div className="flex items-center gap-2">
           {currentUser ? (
-            <Button variant="ghost" size="icon">
-              <User className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <User className="w-5 h-5" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={onLogout}>
+                Logout
+              </Button>
+            </div>
           ) : (
             <Button onClick={onLogin} size="sm">
               Login
