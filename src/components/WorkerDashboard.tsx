@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Header } from "@/components/Header";
 import { useJobs } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { JobCard } from "@/components/JobCard";
@@ -21,7 +22,7 @@ import {
 export function WorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const { jobs, loading, applyToJob } = useJobs();
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
 
   const handleApply = async (jobId: string) => {
     if (profile?.user_id) {
@@ -39,6 +40,12 @@ export function WorkerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header 
+        currentUser={profile?.user_type || null} 
+        onLogin={() => {}} 
+        onLogout={signOut}
+        user={profile}
+      />
       <div className="container mx-auto p-6 space-y-6">
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6">
