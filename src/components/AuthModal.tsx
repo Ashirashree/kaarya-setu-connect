@@ -185,7 +185,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
             </Tabs>
           )}
 
-          <div className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">{mode === 'login' ? 'Phone Number *' : 'Email Address *'}</Label>
@@ -269,7 +269,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
             {/* Submit Button */}
             <Button 
-              onClick={handleSubmit} 
+              type="submit"
               className="w-full" 
               disabled={isLoading}
             >
@@ -306,7 +306,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
                 </>
               )}
             </div>
-          </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>
