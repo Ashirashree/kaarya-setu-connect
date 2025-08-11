@@ -56,6 +56,11 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const normalizePhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    return digits ? `+${digits}` : '';
+  };
+
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -82,14 +87,32 @@ export function useAuth() {
     location: string;
   }) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: userData
-        }
-      });
+      const normalizedPhone = userData.phone ? normalizePhone(userData.phone) : null;
+
+      let data, error;
+      if (normalizedPhone) {
+        ({ data, error } = await supabase.auth.signUp({
+          phone: normalizedPhone,
+          password,
+          options: {
+            data: {
+              full_name: userData.full_name,
+              user_type: userData.user_type,
+              location: userData.location,
+              phone: normalizedPhone
+            }
+          }
+        } as any));
+      } else {
+        ({ data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: userData
+          }
+        }));
+      }
 
       if (error) throw error;
 
@@ -97,6 +120,7 @@ export function useAuth() {
         // Create profile using the user from signup response
         const profileResult = await createProfileForUser(data.user.id, {
           ...userData,
+          phone: normalizedPhone || userData.phone,
           email
         });
         if (profileResult.success) {
@@ -108,6 +132,10 @@ export function useAuth() {
         }
       }
 
+      toast({
+        title: "Registration Successful!",
+        description: "Your account has been created successfully."
+      });
       return { success: true, data };
     } catch (error: any) {
       toast({
@@ -145,34 +173,20 @@ export function useAuth() {
       }
 
       // Determine if identifier is an email or a phone number
-      let emailToUse: string | null = null;
+      let data, error;
 
       if (identifier.includes('@')) {
-        emailToUse = identifier.trim();
+        ({ data, error } = await supabase.auth.signInWithPassword({
+          email: identifier.trim(),
+          password
+        }));
       } else {
-        const raw = identifier.trim();
-        const digits = raw.replace(/\D/g, '');
-        const withPlus = raw.startsWith('+') ? raw : `+${digits}`;
-        const withoutPlus = raw.startsWith('+') ? digits : raw;
-
-        const orFilter = `phone.eq.${raw},phone.eq.${withPlus},phone.eq.${withoutPlus}`;
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('email')
-          .or(orFilter)
-          .maybeSingle();
-          
-        if (profileError) throw profileError;
-        if (!profile?.email) {
-          throw new Error('Phone number not found. Please check your phone number or register first.');
-        }
-        emailToUse = profile.email;
+        const phone = normalizePhone(identifier.trim());
+        ({ data, error } = await supabase.auth.signInWithPassword({
+          phone,
+          password
+        } as any));
       }
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailToUse!,
-        password
-      });
 
       if (error) throw error;
 
@@ -234,7 +248,7 @@ export function useAuth() {
     phone: string;
     user_type: 'worker' | 'employer';
     location: string;
-    email: string;
+    email?: string;
   }) => {
     try {
       const { data, error } = await supabase

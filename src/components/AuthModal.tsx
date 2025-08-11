@@ -39,7 +39,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
   const validateForm = () => {
     if (mode === 'register') {
-      if (!formData.email || !formData.password || !formData.fullName || !formData.phone || !formData.location) {
+      if (!formData.password || !formData.fullName || !formData.phone || !formData.location) {
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields",
