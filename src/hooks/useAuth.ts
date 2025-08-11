@@ -7,6 +7,8 @@ export interface Profile {
   id: string;
   user_id: string;
   full_name: string | null;
+  username?: string | null;
+  email?: string | null;
   phone: string | null;
   user_type: 'worker' | 'employer';
   location: string | null;
@@ -206,6 +208,62 @@ export function useAuth() {
     }
   };
 
+  // Username-based auth helpers
+  const usernameToEmail = (raw: string) => {
+    const username = raw.trim().toLowerCase();
+    return `${username}@kaaryasetu.local`;
+  };
+
+  const signUpWithUsername = async (username: string, password: string) => {
+    try {
+      const email = usernameToEmail(username);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            username: username.trim().toLowerCase(),
+            full_name: username,
+            user_type: 'worker'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        await createProfileForUser(data.user.id, {
+          full_name: username,
+          user_type: 'worker',
+          location: '',
+          phone: '',
+          email,
+          username: username.trim().toLowerCase()
+        });
+      }
+
+      toast({ title: 'Registration Successful!', description: 'Your account has been created successfully.' });
+      return { success: true, data };
+    } catch (error: any) {
+      toast({ title: 'Registration Failed', description: error.message || 'Failed to create account', variant: 'destructive' });
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signInWithUsername = async (username: string, password: string) => {
+    try {
+      const email = usernameToEmail(username);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast({ title: 'Login Successful!', description: 'Welcome back to KaaryaSetu' });
+      return { success: true, data };
+    } catch (error: any) {
+      toast({ title: 'Login Failed', description: error.message || 'Invalid credentials', variant: 'destructive' });
+      return { success: false, error: error.message };
+    }
+  };
+
   const createProfile = async (profileData: {
     full_name: string;
     phone: string;
@@ -249,6 +307,7 @@ export function useAuth() {
     user_type: 'worker' | 'employer';
     location: string;
     email?: string;
+    username?: string;
   }) => {
     try {
       const { data, error } = await supabase
@@ -311,6 +370,8 @@ export function useAuth() {
     loading,
     signUp,
     signIn,
+    signUpWithUsername,
+    signInWithUsername,
     createProfile,
     signOut,
     fetchProfile

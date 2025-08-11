@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { CountryCodeSelector } from "@/components/CountryCodeSelector";
-import { User, Briefcase, LogIn, UserPlus } from "lucide-react";
+
+import { LogIn, UserPlus } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,20 +17,15 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [userType, setUserType] = useState<'worker' | 'employer'>('worker');
-  const [countryCode, setCountryCode] = useState('+91');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { signUp, signIn, profile: userProfile } = useAuth();
+  const { signUpWithUsername, signInWithUsername, profile: userProfile } = useAuth();
 
   // Form state
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
-    confirmPassword: '',
-    fullName: '',
-    phone: '',
-    location: ''
+    confirmPassword: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -39,39 +34,21 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
   const validateForm = () => {
     if (mode === 'register') {
-      if (!formData.password || !formData.fullName || !formData.phone || !formData.location) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all required fields",
-          variant: "destructive"
-        });
+      if (!formData.username || !formData.password) {
+        toast({ title: 'Missing Information', description: 'Please enter username and password', variant: 'destructive' });
         return false;
       }
-      
       if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Password Mismatch",
-          description: "Passwords do not match",
-          variant: "destructive"
-        });
+        toast({ title: 'Password Mismatch', description: 'Passwords do not match', variant: 'destructive' });
         return false;
       }
-
       if (formData.password.length < 6) {
-        toast({
-          title: "Weak Password",
-          description: "Password must be at least 6 characters",
-          variant: "destructive"
-        });
+        toast({ title: 'Weak Password', description: 'Password must be at least 6 characters', variant: 'destructive' });
         return false;
       }
     } else {
-      if (!formData.phone || !formData.password) {
-        toast({
-          title: "Missing Information",
-          description: "Please enter phone number and password",
-          variant: "destructive"
-        });
+      if (!formData.username || !formData.password) {
+        toast({ title: 'Missing Information', description: 'Please enter username and password', variant: 'destructive' });
         return false;
       }
     }
@@ -85,33 +62,32 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
     try {
       if (mode === 'register') {
-        const result = await signUp(formData.email, formData.password, {
-          full_name: formData.fullName,
-          phone: `${countryCode}${formData.phone}`,
-          user_type: userType,
-          location: formData.location
-        });
-
+        const result = await signUpWithUsername(formData.username, formData.password);
         if (result.success) {
-          onLoginSuccess(userType, {
-            email: formData.email,
-            name: formData.fullName,
-            userType
+          onLoginSuccess('worker', {
+            email: '',
+            name: formData.username,
+            userType: 'worker'
           });
           onClose();
           resetForm();
         }
       } else {
-        const result = await signIn(`${countryCode}${formData.phone}`, formData.password);
+        const result = await signInWithUsername(formData.username, formData.password);
         
         if (result.success) {
-          // Wait for profile to be fetched
           setTimeout(() => {
             if (userProfile) {
               onLoginSuccess(userProfile.user_type, {
-                email: formData.email,
-                name: userProfile.full_name || 'User',
+                email: userProfile.email || '',
+                name: userProfile.full_name || formData.username,
                 userType: userProfile.user_type
+              });
+            } else {
+              onLoginSuccess('worker', {
+                email: '',
+                name: formData.username,
+                userType: 'worker'
               });
             }
             onClose();
@@ -128,16 +104,11 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
   const resetForm = () => {
     setFormData({
-      email: '',
+      username: '',
       password: '',
-      confirmPassword: '',
-      fullName: '',
-      phone: '',
-      location: ''
+      confirmPassword: ''
     });
     setMode('login');
-    setUserType('worker');
-    setCountryCode('+91');
   };
 
   const handleClose = () => {
@@ -169,99 +140,18 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
             </TabsList>
           </Tabs>
 
-          {/* User Type Selection (for registration) */}
-          {mode === 'register' && (
-            <Tabs value={userType} onValueChange={(value) => setUserType(value as 'worker' | 'employer')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="worker" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Worker
-                </TabsTrigger>
-                <TabsTrigger value="employer" className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  Employer
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
 
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
-            {/* Identifier */}
-            {mode === 'register' ? (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="login-phone">Phone Number *</Label>
-                <div className="flex">
-                  <CountryCodeSelector
-                    value={countryCode}
-                    onChange={setCountryCode}
-                  />
-                  <Input
-                    id="login-phone"
-                    type="tel"
-                    placeholder="Enter phone number"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
-                    className="rounded-l-none"
-                  />
-                </div>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="username">Username *</Label>
+              <Input
+                id="username"
+                placeholder="Choose a username"
+                value={formData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+              />
+            </div>
 
-            {/* Registration fields */}
-            {mode === 'register' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="Enter your full name"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <div className="flex">
-                    <CountryCodeSelector
-                      value={countryCode}
-                      onChange={setCountryCode}
-                    />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter phone number"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
-                      className="rounded-l-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <Input
-                    id="location"
-                    placeholder="Enter your city/area"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password *</Label>
               <Input
@@ -273,7 +163,6 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
               />
             </div>
 
-            {/* Confirm Password (registration only) */}
             {mode === 'register' && (
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
@@ -287,7 +176,6 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
               </div>
             )}
 
-            {/* Submit Button */}
             <Button 
               type="submit"
               className="w-full" 
@@ -300,7 +188,6 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
               )}
             </Button>
 
-            {/* Switch mode */}
             <div className="text-center text-sm text-muted-foreground">
               {mode === 'login' ? (
                 <>
