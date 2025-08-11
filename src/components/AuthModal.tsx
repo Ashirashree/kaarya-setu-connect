@@ -66,10 +66,10 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         return false;
       }
     } else {
-      if (!formData.email || !formData.password) {
+      if (!formData.phone || !formData.password) {
         toast({
           title: "Missing Information",
-          description: "Please enter email and password",
+          description: "Please enter phone number and password",
           variant: "destructive"
         });
         return false;
@@ -102,7 +102,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           resetForm();
         }
       } else {
-        const result = await signIn(formData.email, formData.password);
+        const result = await signIn(`${countryCode}${formData.phone}`, formData.password);
         
         if (result.success) {
           // Wait for profile to be fetched
@@ -186,17 +186,37 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           )}
 
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">{mode === 'login' ? 'Phone Number *' : 'Email Address *'}</Label>
-              <Input
-                id="email"
-                type={mode === 'login' ? "tel" : "email"}
-                placeholder={mode === 'login' ? "Enter your phone number" : "Enter your email"}
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-              />
-            </div>
+            {/* Identifier */}
+            {mode === 'register' ? (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="login-phone">Phone Number *</Label>
+                <div className="flex">
+                  <CountryCodeSelector
+                    value={countryCode}
+                    onChange={setCountryCode}
+                  />
+                  <Input
+                    id="login-phone"
+                    type="tel"
+                    placeholder="Enter phone number"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
+                    className="rounded-l-none"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Registration fields */}
             {mode === 'register' && (

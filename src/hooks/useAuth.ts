@@ -119,22 +119,58 @@ export function useAuth() {
     }
   };
 
-  const signIn = async (phoneNumber: string, password: string) => {
+  const signIn = async (identifier: string, password: string) => {
     try {
-      // Find user email by phone number
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('phone', phoneNumber)
-        .maybeSingle();
-        
-      if (profileError) throw profileError;
-      if (!profile?.email) {
-        throw new Error('Phone number not found. Please check your phone number or register first.');
+      // Clean up any stale auth state before attempting a new sign-in
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        if (typeof sessionStorage !== 'undefined') {
+          Object.keys(sessionStorage).forEach((key) => {
+            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+        }
+        try {
+          await supabase.auth.signOut({ scope: 'global' });
+        } catch (_) {
+          // ignore
+        }
+      } catch (_) {
+        // ignore cleanup errors
+      }
+
+      // Determine if identifier is an email or a phone number
+      let emailToUse: string | null = null;
+
+      if (identifier.includes('@')) {
+        emailToUse = identifier.trim();
+      } else {
+        const raw = identifier.trim();
+        const digits = raw.replace(/\D/g, '');
+        const withPlus = raw.startsWith('+') ? raw : `+${digits}`;
+        const withoutPlus = raw.startsWith('+') ? digits : raw;
+
+        const orFilter = `phone.eq.${raw},phone.eq.${withPlus},phone.eq.${withoutPlus}`;
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .or(orFilter)
+          .maybeSingle();
+          
+        if (profileError) throw profileError;
+        if (!profile?.email) {
+          throw new Error('Phone number not found. Please check your phone number or register first.');
+        }
+        emailToUse = profile.email;
       }
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: profile.email,
+        email: emailToUse!,
         password
       });
 
