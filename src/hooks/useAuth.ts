@@ -214,7 +214,7 @@ export function useAuth() {
     return `${username}@kaaryasetu.local`;
   };
 
-  const signUpWithUsername = async (username: string, password: string) => {
+  const signUpWithUsername = async (username: string, password: string, userType: 'worker' | 'employer' = 'worker') => {
     try {
       const email = usernameToEmail(username);
       const { data, error } = await supabase.auth.signUp({
@@ -225,7 +225,7 @@ export function useAuth() {
           data: {
             username: username.trim().toLowerCase(),
             full_name: username,
-            user_type: 'worker'
+            user_type: userType
           }
         }
       });
@@ -235,7 +235,7 @@ export function useAuth() {
       if (data.user) {
         await createProfileForUser(data.user.id, {
           full_name: username,
-          user_type: 'worker',
+          user_type: userType,
           location: '',
           phone: '',
           email,

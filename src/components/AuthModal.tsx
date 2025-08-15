@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, Users, BriefcaseIcon } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -25,7 +26,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    userType: 'worker' as 'worker' | 'employer'
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -62,12 +64,12 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
     try {
       if (mode === 'register') {
-        const result = await signUpWithUsername(formData.username, formData.password);
+        const result = await signUpWithUsername(formData.username, formData.password, formData.userType);
         if (result.success) {
-          onLoginSuccess('worker', {
+          onLoginSuccess(formData.userType, {
             email: '',
             name: formData.username,
-            userType: 'worker'
+            userType: formData.userType
           });
           onClose();
           resetForm();
@@ -106,7 +108,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     setFormData({
       username: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      userType: 'worker'
     });
     setMode('login');
   };
@@ -164,16 +167,52 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
             </div>
 
             {mode === 'register' && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label>I am a *</Label>
+                  <RadioGroup 
+                    value={formData.userType} 
+                    onValueChange={(value) => handleInputChange('userType', value)}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="worker" id="worker" />
+                      <Label htmlFor="worker" className="cursor-pointer flex-1">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          <span>Worker</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Looking for work opportunities
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="employer" id="employer" />
+                      <Label htmlFor="employer" className="cursor-pointer flex-1">
+                        <div className="flex items-center gap-2">
+                          <BriefcaseIcon className="w-4 h-4" />
+                          <span>Employer</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Looking to hire workers
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </>
             )}
 
             <Button 

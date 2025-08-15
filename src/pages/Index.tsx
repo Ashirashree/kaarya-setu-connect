@@ -155,122 +155,25 @@ const Index = () => {
   const handleHowItWorks = () => setCurrentView('how-it-works');
   const handleSupport = () => setCurrentView('support');
 
+  // Auto-redirect logged in users to their dashboard
+  useEffect(() => {
+    if (user && profile && currentView === 'home') {
+      if (profile.user_type === 'worker') {
+        setCurrentView('worker');
+      } else if (profile.user_type === 'employer') {
+        setCurrentView('employer');
+      }
+    }
+  }, [user, profile, currentView]);
+
   // Render different views based on state
   const renderContent = () => {
     if (currentView === 'worker') {
-      return (
-        <div>
-          <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} />
-          
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold mb-2">Available Jobs Near You</h1>
-                <p className="text-muted-foreground">
-                  {userLocation ? `Showing jobs near ${userLocation.address}` : 'Find work opportunities in your area'}
-                </p>
-                {userLocation && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Found {filteredJobs.length} jobs within 15 km
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowLocationModal(true)}>
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Update Location
-                </Button>
-                <Button variant="outline" onClick={handleBackToHome}>
-                  Back to Home
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredJobs.map((job) => (
-                <JobCard 
-                  key={job.id}
-                  job={job}
-                  onApply={handleApplyJob}
-                  distance={job.distance}
-                />
-              ))}
-            </div>
-
-            {filteredJobs.length === 0 && (
-              <Card className="p-8 text-center">
-                <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No jobs found in your area</h3>
-                <p className="text-muted-foreground mb-4">
-                  Try updating your location or check back later for new opportunities.
-                </p>
-                <Button variant="outline" onClick={() => setShowLocationModal(true)}>
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Update Location
-                </Button>
-              </Card>
-            )}
-          </div>
-        </div>
-      );
+      return <WorkerDashboard />;
     }
 
     if (currentView === 'employer') {
-      return (
-        <div>
-          <Header currentUser={currentUser} onLogin={handleLogin} onLogout={signOut} user={profile} onMenuClick={() => {}} />
-          
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold mb-2">Employer Dashboard</h1>
-                <p className="text-muted-foreground">Post jobs and find skilled workers</p>
-                {userLocation && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    {userLocation.address}
-                  </p>
-                )}
-              </div>
-              <Button variant="outline" onClick={handleBackToHome}>
-                Back to Home
-              </Button>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Post a New Job</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create a job posting to find skilled workers in your area
-                </p>
-                <Button className="w-full hover:scale-105 transition-transform" onClick={handleCreateJobPost}>Create Job Post</Button>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Browse Workers</h3>
-                <p className="text-muted-foreground mb-4">
-                  Search for available workers by skill and location
-                </p>
-                <Button variant="secondary" className="w-full">Browse Workers</Button>
-              </Card>
-            </div>
-
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Your Recent Job Posts</h3>
-                <div className="grid gap-4">
-                   {jobs.slice(0, 2).map((job) => (
-                     <JobCard 
-                       key={job.id}
-                       job={{...job, employer: 'You'}}
-                       onApply={handleApplyJob}
-                       showApplyButton={false}
-                     />
-                   ))}
-                </div>
-              </div>
-          </div>
-        </div>
-      );
+      return <EmployerDashboard />;
     }
 
     // How It Works Section
