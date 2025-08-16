@@ -197,17 +197,17 @@ export function WorkerDashboard() {
         {(!profile?.location || !profile?.full_name) && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
                   <p className="font-medium">Complete your profile</p>
                   <p className="text-sm text-muted-foreground">
                     Add more details to attract better job opportunities
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto flex-shrink-0">
                   <User className="w-4 h-4 mr-2" />
-                  Update Profile
+                  <span className="truncate">Update Profile</span>
                 </Button>
               </div>
             </CardContent>
