@@ -130,7 +130,13 @@ export function EmployerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => {
+              // TODO: Implement applications view
+              console.log("View Applications clicked");
+            }}
+          >
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -140,7 +146,13 @@ export function EmployerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => {
+              // TODO: Implement analytics view
+              console.log("Analytics clicked");
+            }}
+          >
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-6 h-6 text-green-600" />
