@@ -18,6 +18,7 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [showUserTypeSelect, setShowUserTypeSelect] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { signUpWithUsername, signInWithUsername, profile: userProfile } = useAuth();
@@ -75,26 +76,12 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           resetForm();
         }
       } else {
+        // For login, validate credentials first then ask for user type
         const result = await signInWithUsername(formData.username, formData.password);
         
         if (result.success) {
-          setTimeout(() => {
-            if (userProfile) {
-              onLoginSuccess(userProfile.user_type, {
-                email: userProfile.email || '',
-                name: userProfile.full_name || formData.username,
-                userType: userProfile.user_type
-              });
-            } else {
-              onLoginSuccess('worker', {
-                email: '',
-                name: formData.username,
-                userType: 'worker'
-              });
-            }
-            onClose();
-            resetForm();
-          }, 500);
+          // Show user type selection instead of immediate login
+          setShowUserTypeSelect(true);
         }
       }
     } catch (error) {
@@ -102,6 +89,17 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleUserTypeSelection = (selectedUserType: 'worker' | 'employer') => {
+    // Complete login with selected user type
+    onLoginSuccess(selectedUserType, {
+      email: '',
+      name: formData.username,
+      userType: selectedUserType
+    });
+    onClose();
+    resetForm();
   };
 
   const resetForm = () => {
@@ -112,6 +110,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
       userType: 'worker'
     });
     setMode('login');
+    setShowUserTypeSelect(false);
   };
 
   const handleClose = () => {
@@ -124,136 +123,177 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {mode === 'login' ? 'Login to KaaryaSetu' : 'Join KaaryaSetu'}
+            {showUserTypeSelect ? 'Select Login Type' : (mode === 'login' ? 'Login to KaaryaSetu' : 'Join KaaryaSetu')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Mode Toggle */}
-          <Tabs value={mode} onValueChange={(value) => setMode(value as 'login' | 'register')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" className="flex items-center gap-2">
-                <LogIn className="w-4 h-4" />
-                Login
-              </TabsTrigger>
-              <TabsTrigger value="register" className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
-                Register
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
-              <Input
-                id="username"
-                placeholder="Choose a username"
-                value={formData.username}
-                onChange={(e) => handleInputChange('username', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-              />
-            </div>
-
-            {mode === 'register' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label>I am a *</Label>
-                  <RadioGroup 
-                    value={formData.userType} 
-                    onValueChange={(value) => handleInputChange('userType', value)}
-                    className="grid grid-cols-2 gap-4"
-                  >
-                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
-                      <RadioGroupItem value="worker" id="worker" />
-                      <Label htmlFor="worker" className="cursor-pointer flex-1">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          <span>Worker</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Looking for work opportunities
-                        </div>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
-                      <RadioGroupItem value="employer" id="employer" />
-                      <Label htmlFor="employer" className="cursor-pointer flex-1">
-                        <div className="flex items-center gap-2">
-                          <BriefcaseIcon className="w-4 h-4" />
-                          <span>Employer</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Looking to hire workers
-                        </div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </>
-            )}
-
-            <Button 
-              type="submit"
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                mode === 'login' ? 'Signing in...' : 'Creating account...'
-              ) : (
-                mode === 'login' ? 'Sign In' : 'Create Account'
-              )}
-            </Button>
-
+        {showUserTypeSelect ? (
+          <div className="space-y-6">
             <div className="text-center text-sm text-muted-foreground">
-              {mode === 'login' ? (
+              Welcome back, {formData.username}! How would you like to continue?
+            </div>
+            
+            <div className="space-y-4">
+              <Button 
+                className="w-full h-auto p-6 flex flex-col items-center gap-3 border border-border hover:border-primary"
+                variant="outline"
+                onClick={() => handleUserTypeSelection('worker')}
+              >
+                <Users className="w-8 h-8 text-primary" />
+                <div className="text-center">
+                  <div className="font-semibold">Continue as Worker</div>
+                  <div className="text-xs text-muted-foreground">Looking for work opportunities</div>
+                </div>
+              </Button>
+              
+              <Button 
+                className="w-full h-auto p-6 flex flex-col items-center gap-3 border border-border hover:border-primary"
+                variant="outline"
+                onClick={() => handleUserTypeSelection('employer')}
+              >
+                <BriefcaseIcon className="w-8 h-8 text-primary" />
+                <div className="text-center">
+                  <div className="font-semibold">Continue as Employer</div>
+                  <div className="text-xs text-muted-foreground">Looking to hire workers</div>
+                </div>
+              </Button>
+            </div>
+            
+            <Button 
+              variant="link" 
+              className="w-full text-sm text-muted-foreground" 
+              onClick={() => setShowUserTypeSelect(false)}
+            >
+              Back to login
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Mode Toggle */}
+            <Tabs value={mode} onValueChange={(value) => setMode(value as 'login' | 'register')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login" className="flex items-center gap-2">
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="register" className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Register
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  placeholder="Choose a username"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                />
+              </div>
+
+              {mode === 'register' && (
                 <>
-                  Don't have an account?{' '}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary" 
-                    onClick={() => setMode('register')}
-                  >
-                    Register here
-                  </Button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary" 
-                    onClick={() => setMode('login')}
-                  >
-                    Login here
-                  </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>I am a *</Label>
+                    <RadioGroup 
+                      value={formData.userType} 
+                      onValueChange={(value) => handleInputChange('userType', value)}
+                      className="grid grid-cols-2 gap-4"
+                    >
+                      <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                        <RadioGroupItem value="worker" id="worker" />
+                        <Label htmlFor="worker" className="cursor-pointer flex-1">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            <span>Worker</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Looking for work opportunities
+                          </div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                        <RadioGroupItem value="employer" id="employer" />
+                        <Label htmlFor="employer" className="cursor-pointer flex-1">
+                          <div className="flex items-center gap-2">
+                            <BriefcaseIcon className="w-4 h-4" />
+                            <span>Employer</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Looking to hire workers
+                          </div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                 </>
               )}
-            </div>
-          </form>
-        </div>
+
+              <Button 
+                type="submit"
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  mode === 'login' ? 'Signing in...' : 'Creating account...'
+                ) : (
+                  mode === 'login' ? 'Sign In' : 'Create Account'
+                )}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                {mode === 'login' ? (
+                  <>
+                    Don't have an account?{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary" 
+                      onClick={() => setMode('register')}
+                    >
+                      Register here
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary" 
+                      onClick={() => setMode('login')}
+                    >
+                      Login here
+                    </Button>
+                  </>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
