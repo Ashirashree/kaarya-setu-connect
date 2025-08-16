@@ -205,7 +205,15 @@ export function WorkerDashboard() {
                     Add more details to attract better job opportunities
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto flex-shrink-0">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full sm:w-auto flex-shrink-0"
+                  onClick={() => {
+                    // TODO: Implement profile update modal or navigation
+                    console.log("Update profile clicked");
+                  }}
+                >
                   <User className="w-4 h-4 mr-2" />
                   <span className="truncate">Update Profile</span>
                 </Button>
