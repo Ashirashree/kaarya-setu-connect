@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showUserTypeSelect, setShowUserTypeSelect] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [waitingForProfile, setWaitingForProfile] = useState(false);
   const { toast } = useToast();
   const { signUpWithUsername, signInWithUsername, profile: userProfile } = useAuth();
 
@@ -30,6 +31,22 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     confirmPassword: '',
     userType: 'worker' as 'worker' | 'employer'
   });
+
+  // Handle profile updates after login
+  useEffect(() => {
+    if (waitingForProfile && userProfile && userProfile.user_type) {
+      // User profile is now available, proceed with login
+      onLoginSuccess(userProfile.user_type, {
+        email: userProfile.email || '',
+        name: userProfile.full_name || formData.username,
+        userType: userProfile.user_type
+      });
+      onClose();
+      resetForm();
+      setWaitingForProfile(false);
+      setIsLoading(false);
+    }
+  }, [userProfile, waitingForProfile, onLoginSuccess, onClose, formData.username]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -76,18 +93,42 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           resetForm();
         }
       } else {
-        // For login, validate credentials first then ask for user type
+        // For login, validate credentials first
         const result = await signInWithUsername(formData.username, formData.password);
         
-        if (result.success) {
-          // Show user type selection instead of immediate login
-          setShowUserTypeSelect(true);
+        if (result.success && result.data?.user) {
+          // Check if profile is immediately available
+          if (userProfile && userProfile.user_type) {
+            // User has existing profile, login directly
+            onLoginSuccess(userProfile.user_type, {
+              email: userProfile.email || '',
+              name: userProfile.full_name || formData.username,
+              userType: userProfile.user_type
+            });
+            onClose();
+            resetForm();
+            setIsLoading(false);
+          } else {
+            // Wait for profile to be fetched via useEffect
+            setWaitingForProfile(true);
+            // Fallback timeout in case profile doesn't load
+            setTimeout(() => {
+              if (waitingForProfile) {
+                setWaitingForProfile(false);
+                setShowUserTypeSelect(true);
+                setIsLoading(false);
+              }
+            }, 2000);
+          }
+          return; // Don't set loading to false immediately
         }
       }
     } catch (error) {
       console.error('Auth error:', error);
     } finally {
-      setIsLoading(false);
+      if (mode === 'register') {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -111,6 +152,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     });
     setMode('login');
     setShowUserTypeSelect(false);
+    setWaitingForProfile(false);
+    setIsLoading(false);
   };
 
   const handleClose = () => {
