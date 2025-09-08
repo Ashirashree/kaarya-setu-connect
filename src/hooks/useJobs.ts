@@ -133,6 +133,34 @@ export function useJobs() {
     }
   };
 
+  const deleteJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      // Remove the job from local state
+      setJobs(prev => prev.filter(job => job.id !== jobId));
+
+      toast({
+        title: "Job Deleted",
+        description: "Job posting has been successfully deleted."
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete job",
+        variant: "destructive"
+      });
+      return { success: false, error: error.message };
+    }
+  };
+
   // Calculate distance between two points in kilometers
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371; // Earth's radius in kilometers
@@ -177,6 +205,7 @@ export function useJobs() {
     fetchJobs,
     createJob,
     applyToJob,
+    deleteJob,
     filterJobsByLocation
   };
 }

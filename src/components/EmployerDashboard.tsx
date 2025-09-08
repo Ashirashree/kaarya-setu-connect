@@ -16,12 +16,14 @@ import {
   Building, 
   TrendingUp,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Trash2,
+  Edit
 } from "lucide-react";
 
 export function EmployerDashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
-  const { jobs, loading } = useJobs();
+  const { jobs, loading, deleteJob } = useJobs();
   const { profile, signOut } = useAuth();
 
   // Filter jobs posted by current employer
@@ -30,6 +32,12 @@ export function EmployerDashboard() {
   const completedJobs = myJobs.filter(job => job.status === 'completed');
 
   const recentJobs = myJobs.slice(0, 5);
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (confirm('Are you sure you want to delete this job posting?')) {
+      await deleteJob(jobId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,12 +191,34 @@ export function EmployerDashboard() {
             ) : recentJobs.length > 0 ? (
               <div className="space-y-4">
                 {recentJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onApply={() => {}}
-                    currentUser="employer"
-                  />
+                  <div key={job.id} className="relative">
+                    <JobCard
+                      job={job}
+                      onApply={() => {}}
+                      currentUser="employer"
+                    />
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="bg-background/80 backdrop-blur-sm"
+                        onClick={() => {
+                          // TODO: Implement edit functionality
+                          console.log("Edit job:", job.id);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => handleDeleteJob(job.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
                 {myJobs.length > 5 && (
                   <div className="text-center pt-4">
