@@ -166,7 +166,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {showUserTypeSelect ? 'Select Login Type' : (mode === 'login' ? 'Login to KaaryaSetu' : 'Join KaaryaSetu')}
+            {showUserTypeSelect ? 'Select Login Type' : (mode === 'login' ? 'Login to Ruralink' : 'Join Ruralink')}
           </DialogTitle>
         </DialogHeader>
 

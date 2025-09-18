@@ -21,7 +21,7 @@ export function Header({ currentUser, onLogin, onLogout, user, onMenuClick, onHo
               <Menu className="w-5 h-5" />
             </Button>
           )}
-          <h1 className="text-xl font-bold text-primary">KaaryaSetu</h1>
+          <h1 className="text-xl font-bold text-primary">Ruralink</h1>
         </div>
 
         <nav className="hidden md:flex items-center gap-6">

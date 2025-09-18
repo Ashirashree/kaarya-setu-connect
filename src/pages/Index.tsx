@@ -184,7 +184,7 @@ const Index = () => {
           
           <div className="container mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold">How KaaryaSetu Works</h1>
+              <h1 className="text-3xl font-bold">How Ruralink Works</h1>
               <Button variant="outline" onClick={handleBackToHome}>
                 Back to Home
               </Button>
@@ -375,9 +375,9 @@ const Index = () => {
                   </Card>
                   
                   <Card className="p-6">
-                    <h3 className="font-semibold mb-2">Is KaaryaSetu free to use?</h3>
+                    <h3 className="font-semibold mb-2">Is Ruralink free to use?</h3>
                     <p className="text-muted-foreground">
-                      Yes! KaaryaSetu is completely free for both workers and employers. We believe in empowering 
+                      Yes! Ruralink is completely free for both workers and employers. We believe in empowering 
                       local communities without any financial barriers.
                     </p>
                   </Card>
@@ -590,7 +590,7 @@ const Index = () => {
                   <span className="text-accent"> Daily Jobs</span>
                 </h1>
                 <p className="text-lg md:text-xl text-muted-foreground">
-                  KaaryaSetu bridges the gap between skilled daily wage workers and local job opportunities. 
+                  Ruralink bridges the gap between skilled daily wage workers and local job opportunities. 
                   Find work or hire reliable workers in your neighborhood.
                 </p>
               </div>
@@ -652,7 +652,7 @@ const Index = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why Choose KaaryaSetu?</h2>
+            <h2 className="text-3xl font-bold mb-4">Why Choose Ruralink?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Our platform is designed specifically for the Indian daily wage job market
             </p>
@@ -725,7 +725,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-bold mb-4">KaaryaSetu</h3>
+              <h3 className="text-lg font-bold mb-4">Ruralink</h3>
               <p className="text-primary-foreground/80">
                 Connecting daily wage workers with local job opportunities across India.
               </p>
@@ -756,7 +756,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-primary-foreground/60">
-            <p>&copy; 2024 KaaryaSetu. Empowering local communities through work.</p>
+            <p>&copy; 2024 Ruralink. Empowering local communities through work.</p>
           </div>
         </div>
       </footer>

@@ -11,7 +11,7 @@ export function UserTypeSelector({ onSelectType }: UserTypeSelectorProps) {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-foreground mb-4">
-          How would you like to use KaaryaSetu?
+          How would you like to use Ruralink?
         </h2>
         <p className="text-lg text-muted-foreground">
           Choose your role to get started with finding work or hiring workers

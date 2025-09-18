@@ -194,7 +194,7 @@ export function useAuth() {
 
       toast({
         title: "Login Successful!",
-        description: "Welcome back to KaaryaSetu"
+        description: "Welcome back to Ruralink"
       });
 
       return { success: true, data };
@@ -211,7 +211,7 @@ export function useAuth() {
   // Username-based auth helpers
   const usernameToEmail = (raw: string) => {
     const username = raw.trim().toLowerCase();
-    return `${username}@kaaryasetu.local`;
+    return `${username}@ruralink.local`;
   };
 
   const signUpWithUsername = async (username: string, password: string, userType: 'worker' | 'employer' = 'worker') => {
@@ -256,7 +256,7 @@ export function useAuth() {
       const email = usernameToEmail(username);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast({ title: 'Login Successful!', description: 'Welcome back to KaaryaSetu' });
+      toast({ title: 'Login Successful!', description: 'Welcome back to Ruralink' });
       return { success: true, data };
     } catch (error: any) {
       toast({ title: 'Login Failed', description: error.message || 'Invalid credentials', variant: 'destructive' });
@@ -287,7 +287,7 @@ export function useAuth() {
       setProfile(data as Profile);
       toast({
         title: "Profile Created!",
-        description: "Welcome to KaaryaSetu. Start exploring opportunities!"
+        description: "Welcome to Ruralink. Start exploring opportunities!"
       });
 
       return { success: true, data };
@@ -324,7 +324,7 @@ export function useAuth() {
       setProfile(data as Profile);
       toast({
         title: "Profile Created!",
-        description: "Welcome to KaaryaSetu. Start exploring opportunities!"
+        description: "Welcome to Ruralink. Start exploring opportunities!"
       });
 
       return { success: true, data };
