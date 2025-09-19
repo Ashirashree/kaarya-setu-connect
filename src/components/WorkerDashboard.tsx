@@ -21,7 +21,7 @@ import {
 
 export function WorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const { jobs, loading, applyToJob } = useJobs();
+  const { jobs, applications, loading, applyToJob } = useJobs();
   const { profile, signOut } = useAuth();
 
   const handleApply = async (jobId: string) => {
@@ -35,6 +35,9 @@ export function WorkerDashboard() {
     job.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     job.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Filter applications for current worker
+  const myApplications = applications.filter(app => app.worker_id === profile?.user_id);
 
   const recentJobs = filteredJobs.slice(0, 6);
 
@@ -60,7 +63,7 @@ export function WorkerDashboard() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">0</div>
+                <div className="text-2xl font-bold text-primary">{myApplications.length}</div>
                 <div className="text-sm text-muted-foreground">Applications</div>
               </div>
               <div className="text-center">
@@ -95,7 +98,7 @@ export function WorkerDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Applied</p>
-                  <p className="text-xl font-bold">0</p>
+                  <p className="text-xl font-bold">{myApplications.length}</p>
                 </div>
               </div>
             </CardContent>

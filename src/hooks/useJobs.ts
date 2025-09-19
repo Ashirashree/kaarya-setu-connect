@@ -23,6 +23,7 @@ export interface Job {
 
 export function useJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -174,6 +175,28 @@ export function useJobs() {
     return R * c;
   };
 
+  const fetchApplications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_applications')
+        .select(`
+          *,
+          jobs!inner(title, location, employer_id)
+        `);
+
+      if (error) throw error;
+
+      setApplications(data || []);
+    } catch (error: any) {
+      console.error('Error fetching applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load applications",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filterJobsByLocation = (userLocation: { lat: number; lng: number }) => {
     const maxDistance = 15; // 15 km radius
     const filtered = jobs.filter(job => {
@@ -197,12 +220,15 @@ export function useJobs() {
 
   useEffect(() => {
     fetchJobs();
+    fetchApplications();
   }, []);
 
   return {
     jobs,
+    applications,
     loading,
     fetchJobs,
+    fetchApplications,
     createJob,
     applyToJob,
     deleteJob,

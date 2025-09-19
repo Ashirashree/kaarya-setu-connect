@@ -23,13 +23,18 @@ import {
 
 export function EmployerDashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
-  const { jobs, loading, deleteJob } = useJobs();
+  const { jobs, applications, loading, deleteJob } = useJobs();
   const { profile, signOut } = useAuth();
 
   // Filter jobs posted by current employer
   const myJobs = jobs.filter(job => job.employer_id === profile?.user_id);
   const openJobs = myJobs.filter(job => job.status === 'open');
   const completedJobs = myJobs.filter(job => job.status === 'completed');
+  
+  // Filter applications for employer's jobs
+  const myApplications = applications.filter(app => 
+    app.jobs && app.jobs.employer_id === profile?.user_id
+  );
 
   const recentJobs = myJobs.slice(0, 5);
 
@@ -104,7 +109,7 @@ export function EmployerDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Applications</p>
-                  <p className="text-xl font-bold">0</p>
+                  <p className="text-xl font-bold">{myApplications.length}</p>
                 </div>
               </div>
             </CardContent>
