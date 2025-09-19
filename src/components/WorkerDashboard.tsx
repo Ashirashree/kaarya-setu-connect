@@ -38,6 +38,7 @@ export function WorkerDashboard() {
   
   // Filter applications for current worker
   const myApplications = applications.filter(app => app.worker_id === profile?.user_id);
+  const approvedApplications = myApplications.filter(app => app.status === 'accepted');
 
   const recentJobs = filteredJobs.slice(0, 6);
 
@@ -73,6 +74,43 @@ export function WorkerDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Approved Applications */}
+        {approvedApplications.length > 0 && (
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="w-5 h-5" />
+                Congratulations! You have approved applications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {approvedApplications.map((application) => (
+                  <div key={application.id} className="bg-white rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-green-800">
+                          {application.jobs?.title || 'Job Application'}
+                        </h4>
+                        <p className="text-sm text-green-600">
+                          <MapPin className="w-4 h-4 inline mr-1" />
+                          {application.jobs?.location || 'Location not specified'}
+                        </p>
+                      </div>
+                      <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                        Approved
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-green-700 mt-2">
+                      Your application has been approved by the employer. They may contact you soon with next steps.
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
