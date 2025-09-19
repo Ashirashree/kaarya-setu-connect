@@ -25,7 +25,7 @@ import {
 export function EmployerDashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
-  const { jobs, applications, loading, deleteJob } = useJobs();
+  const { jobs, applications, loading, deleteJob, updateApplicationStatus } = useJobs();
   const { profile, signOut } = useAuth();
 
   // Filter jobs posted by current employer
@@ -279,6 +279,7 @@ export function EmployerDashboard() {
         isOpen={showApplicationsModal}
         onClose={() => setShowApplicationsModal(false)}
         applications={myApplications}
+        onUpdateStatus={updateApplicationStatus}
       />
     </div>
   );

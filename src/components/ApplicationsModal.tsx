@@ -35,10 +35,24 @@ interface ApplicationsModalProps {
   isOpen: boolean;
   onClose: () => void;
   applications: Application[];
+  onUpdateStatus: (applicationId: string, status: 'accepted' | 'rejected') => Promise<{ success: boolean; error?: string }>;
 }
 
-export function ApplicationsModal({ isOpen, onClose, applications }: ApplicationsModalProps) {
+export function ApplicationsModal({ isOpen, onClose, applications, onUpdateStatus }: ApplicationsModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const handleStatusUpdate = async (applicationId: string, status: 'accepted' | 'rejected') => {
+    setLoadingStates(prev => ({ ...prev, [applicationId]: true }));
+    
+    const result = await onUpdateStatus(applicationId, status);
+    
+    setLoadingStates(prev => ({ ...prev, [applicationId]: false }));
+    
+    if (result.success) {
+      // Optionally show success message or close modal
+    }
+  };
 
   const filteredApplications = applications.filter(app => 
     selectedStatus === "all" || app.status === selectedStatus
@@ -164,24 +178,20 @@ export function ApplicationsModal({ isOpen, onClose, applications }: Application
                           <Button 
                             size="sm" 
                             variant="default"
-                            onClick={() => {
-                              // TODO: Implement accept application
-                              console.log("Accept application:", application.id);
-                            }}
+                            disabled={loadingStates[application.id]}
+                            onClick={() => handleStatusUpdate(application.id, 'accepted')}
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
-                            Accept
+                            {loadingStates[application.id] ? 'Processing...' : 'Accept'}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => {
-                              // TODO: Implement reject application
-                              console.log("Reject application:", application.id);
-                            }}
+                            disabled={loadingStates[application.id]}
+                            onClick={() => handleStatusUpdate(application.id, 'rejected')}
                           >
                             <XCircle className="w-4 h-4 mr-1" />
-                            Reject
+                            {loadingStates[application.id] ? 'Processing...' : 'Reject'}
                           </Button>
                         </div>
                       )}

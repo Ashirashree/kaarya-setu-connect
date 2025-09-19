@@ -197,6 +197,40 @@ export function useJobs() {
     }
   };
 
+  const updateApplicationStatus = async (applicationId: string, status: 'accepted' | 'rejected') => {
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ status })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      // Update local applications state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === applicationId 
+            ? { ...app, status }
+            : app
+        )
+      );
+
+      toast({
+        title: "Application Updated",
+        description: `Application has been ${status}.`
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update application",
+        variant: "destructive"
+      });
+      return { success: false, error: error.message };
+    }
+  };
+
   const filterJobsByLocation = (userLocation: { lat: number; lng: number }) => {
     const maxDistance = 15; // 15 km radius
     const filtered = jobs.filter(job => {
@@ -232,6 +266,7 @@ export function useJobs() {
     createJob,
     applyToJob,
     deleteJob,
+    updateApplicationStatus,
     filterJobsByLocation
   };
 }
