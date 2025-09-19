@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { useJobs } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { JobPostModal } from "@/components/JobPostModal";
+import { ApplicationsModal } from "@/components/ApplicationsModal";
 import { JobCard } from "@/components/JobCard";
 import { 
   Plus, 
@@ -23,6 +24,7 @@ import {
 
 export function EmployerDashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
+  const [showApplicationsModal, setShowApplicationsModal] = useState(false);
   const { jobs, applications, loading, deleteJob } = useJobs();
   const { profile, signOut } = useAuth();
 
@@ -145,10 +147,7 @@ export function EmployerDashboard() {
 
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => {
-              // TODO: Implement applications view
-              console.log("View Applications clicked");
-            }}
+            onClick={() => setShowApplicationsModal(true)}
           >
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -274,6 +273,12 @@ export function EmployerDashboard() {
       <JobPostModal 
         isOpen={showJobModal} 
         onClose={() => setShowJobModal(false)} 
+      />
+      
+      <ApplicationsModal
+        isOpen={showApplicationsModal}
+        onClose={() => setShowApplicationsModal(false)}
+        applications={myApplications}
       />
     </div>
   );
