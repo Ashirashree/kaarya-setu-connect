@@ -41,12 +41,10 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         name: userProfile.full_name || formData.username,
         userType: userProfile.user_type
       });
-      onClose();
-      resetForm();
+      handleClose();
       setWaitingForProfile(false);
-      setIsLoading(false);
     }
-  }, [userProfile, waitingForProfile, onLoginSuccess, onClose, formData.username]);
+  }, [userProfile, waitingForProfile, onLoginSuccess]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -97,29 +95,17 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         const result = await signInWithUsername(formData.username, formData.password);
         
         if (result.success && result.data?.user) {
-          // Check if profile is immediately available
-          if (userProfile && userProfile.user_type) {
-            // User has existing profile, login directly
-            onLoginSuccess(userProfile.user_type, {
-              email: userProfile.email || '',
-              name: userProfile.full_name || formData.username,
-              userType: userProfile.user_type
-            });
-            onClose();
-            resetForm();
-            setIsLoading(false);
-          } else {
-            // Wait for profile to be fetched via useEffect
-            setWaitingForProfile(true);
-            // Fallback timeout in case profile doesn't load
-            setTimeout(() => {
-              if (waitingForProfile) {
-                setWaitingForProfile(false);
-                setShowUserTypeSelect(true);
-                setIsLoading(false);
-              }
-            }, 2000);
-          }
+          // Wait for profile to be fetched, always use the async flow
+          setWaitingForProfile(true);
+          
+          // Fallback timeout in case profile doesn't load
+          setTimeout(() => {
+            if (waitingForProfile) {
+              setWaitingForProfile(false);
+              setShowUserTypeSelect(true);
+              setIsLoading(false);
+            }
+          }, 3000);
           return; // Don't set loading to false immediately
         }
       }
