@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { useJobs } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { JobCard } from "@/components/JobCard";
+import { ProfileUpdateModal } from "@/components/ProfileUpdateModal";
 import { 
   Search, 
   MapPin, 
@@ -21,6 +22,7 @@ import {
 
 export function WorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { jobs, applications, loading, applyToJob } = useJobs();
   const { profile, signOut } = useAuth();
 
@@ -250,10 +252,7 @@ export function WorkerDashboard() {
                   variant="outline" 
                   size="sm" 
                   className="w-full sm:w-auto flex-shrink-0"
-                  onClick={() => {
-                    // TODO: Implement profile update modal or navigation
-                    console.log("Update profile clicked");
-                  }}
+                  onClick={() => setShowProfileModal(true)}
                 >
                   <User className="w-4 h-4 mr-2" />
                   <span className="truncate">Update Profile</span>
@@ -263,6 +262,11 @@ export function WorkerDashboard() {
           </Card>
         )}
       </div>
+      
+      <ProfileUpdateModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+      />
     </div>
   );
 }

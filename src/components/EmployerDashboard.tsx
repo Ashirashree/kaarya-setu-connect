@@ -7,6 +7,7 @@ import { useJobs } from "@/hooks/useJobs";
 import { useAuth } from "@/hooks/useAuth";
 import { JobPostModal } from "@/components/JobPostModal";
 import { ApplicationsModal } from "@/components/ApplicationsModal";
+import { ProfileUpdateModal } from "@/components/ProfileUpdateModal";
 import { JobCard } from "@/components/JobCard";
 import { 
   Plus, 
@@ -25,6 +26,7 @@ import {
 export function EmployerDashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { jobs, applications, loading, deleteJob, updateApplicationStatus } = useJobs();
   const { profile, signOut } = useAuth();
 
@@ -260,7 +262,11 @@ export function EmployerDashboard() {
                     Add business details to build trust with workers
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowProfileModal(true)}
+                >
                   <Building className="w-4 h-4 mr-2" />
                   Update Profile
                 </Button>
@@ -280,6 +286,11 @@ export function EmployerDashboard() {
         onClose={() => setShowApplicationsModal(false)}
         applications={myApplications}
         onUpdateStatus={updateApplicationStatus}
+      />
+      
+      <ProfileUpdateModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
       />
     </div>
   );
