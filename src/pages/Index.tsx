@@ -58,7 +58,9 @@ const Index = () => {
   };
 
   const handleLoginSuccess = (userType: 'worker' | 'employer', userData: any) => {
+    console.log('handleLoginSuccess called with:', userType, userData);
     setShowAuthModal(false);
+    setCurrentView(userType);
     toast({
       title: `Welcome, ${userData.name}!`,
       description: `You are now logged in as a ${userType}`
@@ -155,16 +157,16 @@ const Index = () => {
   const handleHowItWorks = () => setCurrentView('how-it-works');
   const handleSupport = () => setCurrentView('support');
 
-  // Auto-redirect logged in users to their dashboard
+  // Auto-redirect logged in users to their dashboard (but not while auth modal is open)
   useEffect(() => {
-    if (user && profile && currentView === 'home') {
+    if (user && profile && currentView === 'home' && !showAuthModal) {
       if (profile.user_type === 'worker') {
         setCurrentView('worker');
       } else if (profile.user_type === 'employer') {
         setCurrentView('employer');
       }
     }
-  }, [user, profile, currentView]);
+  }, [user, profile, currentView, showAuthModal]);
 
   // Render different views based on state
   const renderContent = () => {

@@ -36,15 +36,17 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   useEffect(() => {
     if (waitingForProfile && userProfile && userProfile.user_type) {
       // User profile is now available, proceed with login
+      console.log('Profile loaded, completing login:', userProfile);
       onLoginSuccess(userProfile.user_type, {
         email: userProfile.email || '',
         name: userProfile.full_name || formData.username,
         userType: userProfile.user_type
       });
-      handleClose();
+      setIsLoading(false);
       setWaitingForProfile(false);
+      onClose();
     }
-  }, [userProfile, waitingForProfile, onLoginSuccess]);
+  }, [userProfile, waitingForProfile]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,21 +94,24 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         }
       } else {
         // For login, validate credentials first
+        console.log('Starting login process...');
         const result = await signInWithUsername(formData.username, formData.password);
         
         if (result.success && result.data?.user) {
+          console.log('Login successful, waiting for profile...');
           // Wait for profile to be fetched, always use the async flow
           setWaitingForProfile(true);
           
           // Fallback timeout in case profile doesn't load
           setTimeout(() => {
-            if (waitingForProfile) {
-              setWaitingForProfile(false);
-              setShowUserTypeSelect(true);
-              setIsLoading(false);
-            }
-          }, 3000);
+            console.log('Login timeout, checking if still waiting:', waitingForProfile);
+            setWaitingForProfile(false);
+            setShowUserTypeSelect(true);
+            setIsLoading(false);
+          }, 5000);
           return; // Don't set loading to false immediately
+        } else {
+          console.error('Login failed:', result);
         }
       }
     } catch (error) {
