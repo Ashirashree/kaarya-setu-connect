@@ -36,54 +36,55 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
 
   // Handle profile updates after login
   useEffect(() => {
-    if (waitingForProfile && userProfile && userProfile.user_type) {
-      console.log('Profile loaded, validating user type:', userProfile);
+    if (!waitingForProfile || !userProfile?.user_type) return;
+
+    console.log('Profile loaded, validating user type:', userProfile);
+    
+    // Validate that the selected login type matches the profile's user_type
+    if (formData.loginUserType && userProfile.user_type !== formData.loginUserType) {
+      // User type mismatch - reject login
+      console.error('User type mismatch:', { expected: formData.loginUserType, actual: userProfile.user_type });
       
-      // Validate that the selected login type matches the profile's user type
-      if (formData.loginUserType && userProfile.user_type !== formData.loginUserType) {
-        // User type mismatch - reject login
-        console.error('User type mismatch:', { expected: formData.loginUserType, actual: userProfile.user_type });
-        
-        // Sign out immediately and forcefully
-        supabase.auth.signOut({ scope: 'global' }).then(() => {
-          // Clear all auth-related localStorage
-          Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-              localStorage.removeItem(key);
-            }
-          });
-        });
-        
-        toast({
-          title: 'Access Denied',
-          description: `This account is registered as a ${userProfile.user_type}. Please select the correct login type.`,
-          variant: 'destructive'
-        });
-        
-        // Reset state and prevent login
-        setIsLoading(false);
-        setWaitingForProfile(false);
-        setFormData({
-          username: '',
-          password: '',
-          confirmPassword: '',
-          userType: 'worker',
-          loginUserType: ''
-        });
-        return;
-      }
-      
-      // User profile is valid, proceed with login
-      console.log('User type validated, completing login');
-      onLoginSuccess(userProfile.user_type, {
-        email: userProfile.email || '',
-        name: userProfile.full_name || formData.username,
-        userType: userProfile.user_type
-      });
-      setIsLoading(false);
+      // Clean up and sign out
       setWaitingForProfile(false);
-      onClose();
+      setIsLoading(false);
+      
+      supabase.auth.signOut({ scope: 'global' }).then(() => {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+      });
+      
+      toast({
+        title: 'Access Denied',
+        description: `This account is registered as a ${userProfile.user_type}. Please select the correct login type.`,
+        variant: 'destructive'
+      });
+      
+      // Reset form
+      setFormData({
+        username: '',
+        password: '',
+        confirmPassword: '',
+        userType: 'worker',
+        loginUserType: ''
+      });
+      return;
     }
+    
+    // User profile is valid, proceed with login
+    console.log('User type validated, completing login');
+    setWaitingForProfile(false);
+    setIsLoading(false);
+    
+    onLoginSuccess(userProfile.user_type, {
+      email: userProfile.email || '',
+      name: userProfile.full_name || formData.username,
+      userType: userProfile.user_type
+    });
+    onClose();
   }, [userProfile, waitingForProfile]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -136,24 +137,23 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         }
       } else {
         // For login, validate credentials first
-        console.log('Starting login process...');
         const result = await signInWithUsername(formData.username, formData.password);
         
         if (result.success && result.data?.user) {
-          console.log('Login successful, waiting for profile...');
-          // Wait for profile to be fetched, always use the async flow
+          // Wait for profile to be fetched
           setWaitingForProfile(true);
           
           // Fallback timeout in case profile doesn't load
-          setTimeout(() => {
-            console.log('Login timeout, checking if still waiting:', waitingForProfile);
-            setWaitingForProfile(false);
-            setShowUserTypeSelect(true);
-            setIsLoading(false);
-          }, 5000);
-          return; // Don't set loading to false immediately
-        } else {
-          console.error('Login failed:', result);
+          const timeoutId = setTimeout(() => {
+            if (waitingForProfile) {
+              setWaitingForProfile(false);
+              setShowUserTypeSelect(true);
+              setIsLoading(false);
+            }
+          }, 3000);
+          
+          // Clean up timeout if component unmounts
+          return () => clearTimeout(timeoutId);
         }
       }
     } catch (error) {
