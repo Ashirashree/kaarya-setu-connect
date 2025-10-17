@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 import { LogIn, UserPlus, Users, BriefcaseIcon } from "lucide-react";
 
@@ -36,8 +37,30 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   // Handle profile updates after login
   useEffect(() => {
     if (waitingForProfile && userProfile && userProfile.user_type) {
-      // User profile is now available, proceed with login
-      console.log('Profile loaded, completing login:', userProfile);
+      console.log('Profile loaded, validating user type:', userProfile);
+      
+      // Validate that the selected login type matches the profile's user type
+      if (formData.loginUserType && userProfile.user_type !== formData.loginUserType) {
+        // User type mismatch - reject login
+        console.error('User type mismatch:', { expected: formData.loginUserType, actual: userProfile.user_type });
+        
+        toast({
+          title: 'Access Denied',
+          description: `This account is registered as a ${userProfile.user_type}. Please select the correct login type.`,
+          variant: 'destructive'
+        });
+        
+        // Sign out the user
+        supabase.auth.signOut();
+        
+        // Reset state
+        setIsLoading(false);
+        setWaitingForProfile(false);
+        return;
+      }
+      
+      // User profile is valid, proceed with login
+      console.log('User type validated, completing login');
       onLoginSuccess(userProfile.user_type, {
         email: userProfile.email || '',
         name: userProfile.full_name || formData.username,
