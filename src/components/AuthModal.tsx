@@ -44,18 +44,32 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         // User type mismatch - reject login
         console.error('User type mismatch:', { expected: formData.loginUserType, actual: userProfile.user_type });
         
+        // Sign out immediately and forcefully
+        supabase.auth.signOut({ scope: 'global' }).then(() => {
+          // Clear all auth-related localStorage
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+              localStorage.removeItem(key);
+            }
+          });
+        });
+        
         toast({
           title: 'Access Denied',
           description: `This account is registered as a ${userProfile.user_type}. Please select the correct login type.`,
           variant: 'destructive'
         });
         
-        // Sign out the user
-        supabase.auth.signOut();
-        
-        // Reset state
+        // Reset state and prevent login
         setIsLoading(false);
         setWaitingForProfile(false);
+        setFormData({
+          username: '',
+          password: '',
+          confirmPassword: '',
+          userType: 'worker',
+          loginUserType: ''
+        });
         return;
       }
       
