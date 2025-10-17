@@ -29,7 +29,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     username: '',
     password: '',
     confirmPassword: '',
-    userType: 'worker' as 'worker' | 'employer'
+    userType: 'worker' as 'worker' | 'employer',
+    loginUserType: '' as 'worker' | 'employer' | ''
   });
 
   // Handle profile updates after login
@@ -67,6 +68,10 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         return false;
       }
     } else {
+      if (!formData.loginUserType) {
+        toast({ title: 'Select User Type', description: 'Please select whether you are a worker or employer', variant: 'destructive' });
+        return false;
+      }
       if (!formData.username || !formData.password) {
         toast({ title: 'Missing Information', description: 'Please enter username and password', variant: 'destructive' });
         return false;
@@ -139,7 +144,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
       username: '',
       password: '',
       confirmPassword: '',
-      userType: 'worker'
+      userType: 'worker',
+      loginUserType: ''
     });
     setMode('login');
     setShowUserTypeSelect(false);
@@ -218,6 +224,42 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
             </Tabs>
 
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+              {mode === 'login' && (
+                <div className="space-y-3">
+                  <Label>I am a *</Label>
+                  <RadioGroup 
+                    value={formData.loginUserType} 
+                    onValueChange={(value) => handleInputChange('loginUserType', value)}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="worker" id="login-worker" />
+                      <Label htmlFor="login-worker" className="cursor-pointer flex-1">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          <span>Worker</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Looking for work
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="employer" id="login-employer" />
+                      <Label htmlFor="login-employer" className="cursor-pointer flex-1">
+                        <div className="flex items-center gap-2">
+                          <BriefcaseIcon className="w-4 h-4" />
+                          <span>Employer</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Looking to hire
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="username">Username *</Label>
                 <Input
